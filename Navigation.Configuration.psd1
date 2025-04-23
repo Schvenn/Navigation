@@ -3,6 +3,7 @@ GotoCachePath = "FolderCache.json"
 GotoSearchRoots = @("C:\Users","D:\Users","E:")
 GotoSearchExclusions = @("`$RECYCLE.BIN","RecycleBin")
 GotoCacheMaxAge = 5
+GotoCacheMaxMatches = 10
 RecursionDepth = 6
 GotoCacheSize = 25
 BookmarkFilePath = "Bookmarks.log"

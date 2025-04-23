@@ -15,6 +15,7 @@ $script:GotoCachePath = Join-Path $baseModulePath $ExecutionContext.InvokeComman
 $script:GotoSearchRoots = $config.GotoSearchRoots
 $script:GotoSearchExclusions = $config.GotoSearchExclusions
 $script:GotoCacheMaxAge = $config.GotoCacheMaxAge
+$script:GotoCacheMaxMatches = $config.GotoCacheMaxMatches
 $script:RecursionDepth = $config.RecursionDepth
 $script:GotoCacheSize = $config.GotoCacheSize
 $script:BookmarkFilePath = Join-Path $baseModulePath $ExecutionContext.InvokeCommand.ExpandString($config.BookmarkFilePath)
@@ -266,9 +267,10 @@ At the bottom of the profile, after all other entries, you can also add the foll
 
 This package includes the following files:
 
-License.txt 			- Legal declaration of MIT license
-Read.me				- Text version of this help 
-Navigation.psm1			- The main module
+License.txt 			- Legal declaration of MIT license.
+Read.me				- Text version of this help .
+Navigation.psm1			- The main module.
+Navigation.psd1			- The standard PowerShell module manifest. I keep this separate for safety's sake.
 Navigation.Configuration.psd1	- Configuration file that you customize. This is the only file you should need to manually adjust.
 
 Additional files will be populated the first time you use specific features:
@@ -289,6 +291,7 @@ GotoCachePath = "FolderCache.json"
 GotoSearchRoots = @("C:\Users","D:\Users","E:")
 GotoSearchExclusions = @("`$RECYCLE.BIN","RecycleBin")
 GotoCacheMaxAge = 5
+GotoCacheMaxMatches = 10
 RecursionDepth = 6
 GotoCacheSize = 25
 BookmarkFilePath = "Bookmarks.log"
@@ -402,19 +405,22 @@ sal -name bookmarks -value bookmark
 #									goto function
 # ----------------------------------------------------------------------------------
 
-$GotoSearchRoots = $script:GotoSearchRoots; $GotoCacheMaxAge = $script:GotoCacheMaxAge; $RecursionDepth = $script:RecursionDepth; $GotoCacheSize = $script:GotoCacheSize
+$GotoSearchRoots = $script:GotoSearchRoots; $GotoCacheMaxAge = $script:GotoCacheMaxAge; $script:GotoCacheMaxMatches; $RecursionDepth = $script:RecursionDepth; $GotoCacheSize = $script:GotoCacheSize
+
 
 function goto ($location,$explorer) {# Custom-recursive directory search, case-insensitive, with autocomplete, history and max depth.
 $originalLocation = $Location.ToLowerInvariant(); $matches = @(); $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
 # Iterate through all entries in the cache and filter early
-$matches = $GotoFolders | Where-Object {$relativeToCheck = $_.ToLowerInvariant(); $nameToCheck = ($relativeToCheck.Split('\')[-1]); $nameToCheck -like "*$($originalLocation)*" -or $relativeToCheck -like "*$($originalLocation)*"} | ForEach-Object {[PSCustomObject]@{Path = $_; Rel = $_.Substring($_.IndexOf($root) + $root.Length + 1)}}
+$matches = $GotoFolders | Where-Object {$leaf = ($_ -split '\\')[-1].ToLowerInvariant(); $leaf -like "*$($originalLocation)*"} | ForEach-Object {[PSCustomObject]@{Path = $_; Rel  = $_.Substring($_.IndexOf($root) + $root.Length + 1)}}
 
 # Provide performance feedback
 $stopwatch.Stop(); if ($stopwatch.Elapsed.TotalSeconds -gt 0) {Write-Host -ForegroundColor green -NoNewLine "`nThis search took "; Write-Host -ForegroundColor red -NoNewLine ("{0:N3}" -f $stopwatch.Elapsed.TotalSeconds); Write-Host -ForegroundColor green " seconds to complete."}
 
-# If there are more than the set number of matches, prompt to refine the search.
-if ($matches.Count -gt $GotoCacheMaxAge) {Write-Host -ForegroundColor cyan -NoNewLine "There are "; Write-Host -ForegroundColor red -NoNewLine "$($matches.Count)"; Write-Host -ForegroundColor cyan -NoNewLine " options matching the pattern `""; Write-Host -ForegroundColor red -NoNewLine "`*$originalLocation`*"; Write-Host -ForegroundColor cyan "`" as a parent directory. Please refine your search.`n"; return}
+# If there are more than the set number of matches, attempt to limit to first 4 directory levels.
+if ($matches.Count -gt $GotoCacheMaxMatches) {$earlyMatches = $matches | Where-Object {($_.Rel -split '\\').Count -le 4}
+if ($earlyMatches.Count -le $GotoCacheMaxMatches) {$matches = $earlyMatches}
+else {Write-Host -ForegroundColor cyan -NoNewLine "There are "; Write-Host -ForegroundColor red -NoNewLine "$($matches.Count)"; Write-Host -ForegroundColor cyan -NoNewLine " options matching the pattern `""; Write-Host -ForegroundColor red -NoNewLine "`*$originalLocation`*"; Write-Host -ForegroundColor cyan "`" as a parent directory. Please refine your search.`n"; return}}
 
 # Provide options if more than one match exists.
 if ($matches.Count -gt 1) {write-host -ForegroundColor cyan "Multiple matches found:`n"; for ($i = 0; $i -lt $matches.Count; $i++) {write-host -ForegroundColor cyan -NoNewLine "$($i + 1):"; Write-Host -ForegroundColor white " $($matches[$i].Rel)"}; [int]$selection = Read-Host "`nSelect a location by number, 1 to $($matches.Count)";  if ($selection -lt 1 -or $selection -gt $matches.Count) {Write-Host -ForegroundColor red "Invalid entry. Exiting.`n"; break} else {$match = $matches[$selection - 1]}}
@@ -433,6 +439,7 @@ if (!(Test-Path $GotoLogPath) -or !($existingEntries -contains $logEntry)) {$upd
 # Change to the selected directory
 $destination = $match.Rel; sl $destination; if($explorer -match "(?i)^explorer?$") {Start-Process explorer.exe $destination}}
 sal -name jumpto -value goto
+
 
 # ----------------------------------------------------------------------------------
 #									recent function
@@ -474,7 +481,15 @@ $GotoCachePath = $script:GotoCachePath; $GotoSearchExclusions = $script:GotoSear
 
 function Get-GotoCache {if (Test-Path $GotoCachePath) {try {return Get-Content $GotoCachePath -Raw | ConvertFrom-Json} catch {return @()}} return @()}
 
-function Start-GotoCacheRefreshJob {Start-Job -ScriptBlock {try {Write-Host -ForegroundColor Yellow "`nCache refresh job started."; $folders = foreach ($root in $using:GotoSearchRoots) {Write-Host "`nSearching: $root " -NoNewLine; Get-ChildItem -Path $root -Recurse -Directory -Force -ErrorAction SilentlyContinue | Where-Object {($_.FullName.Substring($root.Length+1)).Split('\').Count -le $using:RecursionDepth} | ForEach-Object {try {$folderName = $_.Name; if ($using:GotoSearchExclusions -contains $folderName.Substring(0, [Math]::Min($folderName.Length, 12))) {Write-Host  -ForegroundColor Red "Excluding: $($_.FullName) " -NoNewLine} elseif ($_.GetDirectories().Count -eq 0) {$_.FullName}} catch {Write-Host -ForegroundColor Red "." -NoNewLine}}}; $folders = $folders | Sort-Object -Unique; Write-Host "`nFolders found: $($folders.Count)" -ForegroundColor Green; $folders | ConvertTo-Json | Set-Content -Encoding UTF8 $using:GotoCachePath; Write-Host -ForegroundColor Green "Cache file updated: " -NoNewLine;  Write-Host -ForegroundColor Yellow "$using:GotoCachePath`n"} catch {Write-Host -ForegroundColor Red "Error during cache refresh: $_"}} | Out-Null; ""}
+function Start-GotoCacheRefreshJob {Start-Job -ScriptBlock {try {Write-Host -ForegroundColor Yellow "`nCache refresh job started."; $folders = foreach ($root in $using:GotoSearchRoots) {Write-Host "`nSearching: $root " -NoNewLine; $collected = @($root)
+
+# Recursively get subdirectories up to max depth
+$subdirs = Get-ChildItem -Path $root -Recurse -Directory -Force -ErrorAction SilentlyContinue | Where-Object {($_.FullName.Substring($root.Length+1)).Split('\').Count -le $using:RecursionDepth}
+
+# Filter exclusions and build list
+$collected += $subdirs | ForEach-Object {try {$folderName = $_.Name; if ($using:GotoSearchExclusions -contains $folderName.Substring(0, [Math]::Min($folderName.Length, 12))) {Write-Host  -ForegroundColor Red "Excluding: $($_.FullName) " -NoNewLine} else {$_.FullName}} catch {Write-Host -ForegroundColor Red "." -NoNewLine}}; $collected}
+
+$folders = $folders | Sort-Object -Unique; Write-Host "`nFolders found: $($folders.Count)" -ForegroundColor Green; $folders | ConvertTo-Json | Set-Content -Encoding UTF8 $using:GotoCachePath; Write-Host -ForegroundColor Green "Cache file updated: " -NoNewLine; Write-Host -ForegroundColor Yellow "$using:GotoCachePath`n"} catch {Write-Host -ForegroundColor Red "Error during cache refresh: $_"}} | Out-Null; ""}
 
 # Check cache freshness
 $refreshNeeded = $true; if (Test-Path $GotoCachePath) {$lastWrite = (Get-Item $GotoCachePath).LastWriteTime; if (((Get-Date) - $lastWrite).TotalMinutes -lt $GotoCacheMaxAge) {$refreshNeeded = $false}}

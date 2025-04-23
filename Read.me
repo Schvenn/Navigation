@@ -58,9 +58,10 @@ At the bottom of the profile, after all other entries, you can also add the foll
 
 This package includes the following files:
 
-License.txt 			- Legal declaration of MIT license
-Read.me					- This file
-Navigation.psm1			- The main module
+License.txt 			- Legal declaration of MIT license.
+Read.me					- This file.
+Navigation.psm1			- The main module.
+Navigation.psd1			- The standard PowerShell module manifest. I keep this separate for safety's sake.
 Navigation.Configuration.psd1	- Configuration file that you customize. This is the only file you should need to manually adjust.
 
 Additional files will be populated the first time you use specific features:
@@ -82,6 +83,7 @@ GotoCachePath = "FolderCache.json"
 GotoSearchRoots = @("C:\Users","D:\Users","E:")
 GotoSearchExclusions = @("`$RECYCLE.BIN","RecycleBin")
 GotoCacheMaxAge = 5
+GotoCacheMaxMatches = 10
 RecursionDepth = 6
 GotoCacheSize = 25
 BookmarkFilePath = "Bookmarks.log"
