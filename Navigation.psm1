@@ -4,7 +4,7 @@
 
 function loadnavigationconfiguration {# (Internal) Load the configuration settings from the PSD1 file.
 # Detect whether the module is under PowerShell or WindowsPowerShell
-$script:baseModulePath = if ($PSVersionTable.PSEdition -eq 'Core') {"$env:USERPROFILE\Documents\Powershell\Modules\Navigation"} else {"$env:USERPROFILE\Documents\WindowsPowerShell\Modules\Navigation"}
+$script:baseModulePath = if ($PSVersionTable.PSEdition -eq 'Core') {"$home\Documents\Powershell\Modules\Navigation"} else {"$home\Documents\WindowsPowerShell\Modules\Navigation"}
 
 $script:configPath = Join-Path $baseModulePath "Navigation.Configuration.psd1"; if (!(Test-Path $configPath)) {throw "Config file not found at $configPath"}
 $script:config = Import-PowerShellDataFile -Path $configPath
@@ -27,7 +27,7 @@ loadnavigationconfiguration
 # ----------------------------------------------------------------------------------
 
 function tableofcontents {clear-host
-Write-Host -ForegroundColor Yellow "`n-------------------------------------------------------------------`n`t`t`tNavigation Help`n-------------------------------------------------------------------`n"
+Write-Host -f yellow "`n-------------------------------------------------------------------`n`t`t`tNavigation Help`n-------------------------------------------------------------------`n"
 Write-Host "1. License"
 Write-Host "2. Introduction"
 Write-Host "3. Location(s)"
@@ -40,9 +40,9 @@ Write-Host "9. Installation"
 Write-Host "10. Configuration"
 Write-Host "11. Disclaimer"
 Write-Host "Q. Quit"
-Write-Host -ForegroundColor Yellow "-------------------------------------------------------------------`n"}
+Write-Host -f yellow "-------------------------------------------------------------------`n"}
 
-function navigation {# Help screen for this module
+function navigation {# Help screen for this module.
 tableofcontents
 do {$choice = Read-Host "`nEnter a number to view help or Q to quit"
 switch ($choice.ToLower()) {
@@ -68,7 +68,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
 THE SOFTWARE.
-"@ -ForegroundColor White}
+"@ -f white}
 '2' {clear-host; tableofcontents; Write-Host @"
 Introduction:
 
@@ -94,7 +94,7 @@ AutoComplete Cache is the background functionality that creates and maintains th
 ViewGotoCache is a bit more obscure, but is interesting for the technical fans. It allows you to interact with the folder cache and display some interesting statistics about it. This has limited functionality, but is somewhat useful and fun for those that care.
 
 Bonus feature: Bookmark(s), Goto and Recent(s) also allow you the option to open the directories you choose in an Explorer window.
-"@ -ForegroundColor White}
+"@ -f white}
 '3' {clear-host; tableofcontents; Write-Host @"
 Location(s):
 
@@ -105,7 +105,7 @@ This function is one of the last ones developed and has so many features that I 
 Parameter:		Purpose:
 _____			If you run location(s) without any parameters, it will read the locations.log file and create commands from all of the paths you have saved there.
 help			This presents a screen with all of the features.
-this/current		Creates a function for the current path, relevant for the current session only.
+current			Creates a function for the current path, relevant for the current session only.
 any valid path		Entering any path, tests that path and creates a function for the that folder if valid.
 add			Asks you for a path, (defaults to current) tests and creates it, saving it to the file for repeated use.
 del(ete)		This presents a menu of all items currently active and allows you to remove them.
@@ -125,20 +125,20 @@ In the example below I navigate to the desktop using a function created by the l
 
 	Alias 'blarg' created and saved for 'c:\users\schvenn\desktop\blarg'
 
-		`$env:USERPROFILE\desktop
-		`$env:USERPROFILE\documents
-		`$env:USERPROFILE\documents\powershell\modules
+		`$home\desktop
+		`$home\documents
+		`$home\documents\powershell\modules
 		c:\users\schvenn\desktop\blarg
 
 	C:\Users\Schvenn\Desktop\blarg> cd ..; remove-item blarg
 	C:\Users\Schvenn\Desktop> locations file
 
-		`$env:USERPROFILE\desktop
-		`$env:USERPROFILE\documents
-		`$env:USERPROFILE\documents\powershell\modules
+		`$home\desktop
+		`$home\documents
+		`$home\documents\powershell\modules
 		c:\users\schvenn\desktop\blarg (missing)
 
-"@ -ForegroundColor White}
+"@ -f white}
 '4' {clear-host; tableofcontents; Write-Host @"
 Bookmark(s):
 
@@ -149,9 +149,9 @@ _____			Running it without a parameter presents you with a menu of your saved bo
 invalid input		By typing something invalid, the function will provide you with a list of acceptable parameters.
 list/get		This presents you a list of your bookmarks, without any required interaction.
 add			This allows you to add valid paths to the bookmarks file.
-this/current		This will add the current path to the bookmarks file.
+current			This will add the current path to the bookmarks file.
 expunge			This will delete everything in the bookmarks file, but with a confirmation before proceeding.
-re(move)			This allows you to remove items from the bookmarks file, identifying broken paths.
+re(move)		This allows you to remove items from the bookmarks file, identifying broken paths.
 explore(r)		This presents a menu of your bookmarks, but opens an Explorer window, as well as navigating to your chosen option.
 justexplore(r)		This will present a menu of your bookmarks, but only open an Explorer window of the chosen option, without navigating there.
 
@@ -171,7 +171,7 @@ C:\Users\Schvenn\Desktop\blarg> cd ..; remove-item blarg; bookmarks
 	...
 	4: D:\Users\Schvenn\Documents\Powershell\Modules
 	5: C:\Users\Schvenn\Desktop\blarg (missing)
-"@ -ForegroundColor White}
+"@ -f white}
 '5' {clear-host; tableofcontents; Write-Host @"
 Goto:
 
@@ -186,7 +186,7 @@ The optional explorer switch will open an Explorer window at the selected locati
 That is it. This function is designed to be simple and seamless, but wait! There's more! This is where the autocompletion feature comes into play. The first time you use it, PowerShell will take a few minutes to scan the directories you configured and populate its folder cache, after which, you can use TAB to take advantage of this feature. Consider for example, a situation wherein you only know part of the folder name. Type Goto, followed by the part of the folder name that you do know and start using TAB and Shift-TAB to cycle through all the possible options, before selecting the folder you require. This is where the power of this tool becomes immediately evident.
 
 The only other feature to be aware of is the selection history. Every time you use Goto, it will save the directories to which you navigated to in its history file. By default the history is set to 25 entries, but you can configure this to a different size, if you wish. This history cache is used by the next feature, Recent(s).
-"@ -ForegroundColor White}
+"@ -f white}
 '6' {clear-host; tableofcontents; Write-Host @"
 Recent(s):
 
@@ -198,12 +198,12 @@ list/get		This will simply list the Goto history, without the option to navigate
 clear			This will delete the Goto history, but only after a confirmation prompt.
 re(move)		This will provide you with a menu of the Goto history and allow you to remove specific entries, useful for maintaining temporary navigation priority.
 explore(r)		This presents a menu of the Goto history, but opens an Explorer window, as well as navigating to your chosen option.
-"@ -ForegroundColor White}
+"@ -f white}
 '7' {clear-host; tableofcontents; Write-Host @"
 AutoComplete Cache:
 
 This set of functions creates the autocompletion feature for Goto, via the command line. It also builds the folder cache and loads it into memory, which is why it's so fast in helping you find your folders. There is nothing here with which the user needs to interact.
-"@ -ForegroundColor White}
+"@ -f white}
 '8' {clear-host; tableofcontents; Write-Host @"
 ViewGotoCache:
 
@@ -250,7 +250,7 @@ C:\Users\Schvenn> Receive-Job -Id 1
 	Searching: E: Excluding: E:\$RECYCLE.BIN ...............
 	Folders found: 25718
 	Cache file updated: C:\Users\Schvenn\Documents\Powershell\Modules\Navigation\FolderCache.json
-"@ -ForegroundColor White}
+"@ -f white}
 '9' {clear-host; tableofcontents; Write-Host @"
 Installation:
 
@@ -279,7 +279,7 @@ FolderCache.json 		- The cache created by the AutoComplete function, also used b
 Bookmarks.log 			- A list of all folder booksmarks you've created for fast navigation.
 Locations.log 			- A list of all the immediate navigation directories you have saved.
 History.log 			- A list of the most recent directories you have navigated to using Goto functionality, also used by the Recents function for quick return.
-"@ -ForegroundColor White}
+"@ -f white}
 '10' {clear-host; tableofcontents; Write-Host @"
 Configuration:
 
@@ -306,16 +306,16 @@ The GotoCacheMaxAge tells the module how often to refresh the directory listing.
 RecursionDepth can greatly impact performance and effective searches, as well. This number denotes how many directories deep the functions should search, as well as how big the cache should be. I wouldn't recommend going much deeper than 6 and for most people, 4 is likely a better number; striking the balance between performance and completeness.
 
 GotoCacheSize sets the number of recent directory hops to keep in the history. This is used by the Recent(s) functionality.
-"@ -ForegroundColor White}
+"@ -f white}
 '11' {clear-host; tableofcontents; Write-Host @"
 Disclaimer:
 
 Use at your own risk. There is no warranty of any kind, implied or otherwise. I know of nothing here that could possibly cause any disruption, but I'm not going to be held liable for any use or misuse of this package.
 
 This software and the authour are not affliated with any organization. I made this package for my personal use, but feel like it could be useful to others, so I'm sharing it. Do not abuse it.
-"@ -ForegroundColor White}
+"@ -f white}
 'q'  {clear-host}
-default {clear-host; tableofcontents; Write-Host "`nInvalid option. Try again." -ForegroundColor Red}}} while ($choice.ToLower() -ne 'q'), ""}
+default {clear-host; tableofcontents; Write-Host "`nInvalid option. Try again." -f red}}} while ($choice.ToLower() -ne 'q'), ""}
 
 # ----------------------------------------------------------------------------------
 #									locations function
@@ -324,43 +324,43 @@ default {clear-host; tableofcontents; Write-Host "`nInvalid option. Try again." 
 $LocationsPath = $script:LocationsPath
 
 function getlocations {# (Internal) Display all active locations paths.
-""; Get-Command -Type Function | Where-Object {($_.Definition -match '^Set-Location') -and ($_.Name -notmatch '^(.:|cd..?)$')} | ForEach-Object {Write-Host -ForegroundColor Cyan $_.Name}; ""}
+""; Get-Command -Type Function | Where-Object {($_.Definition -match '^Set-Location') -and ($_.Name -notmatch '^(.:|cd..?)$')} | ForEach-Object {Write-Host -f cyan $_.Name}; ""}
 
-function locations ($Path) {# Creates functions for easy navigation to specific paths.
+function locations ($path) {# Creates functions for easy navigation to specific paths.
 
 # Load locations file.
-if (!$Path) {Write-Host -ForegroundColor Cyan "`nDefault locations set:"; Get-Content $LocationsPath | ForEach-Object {$line=$_.Trim();if($line){$expanded=$ExecutionContext.InvokeCommand.ExpandString($line);if(Test-Path $expanded){$full=(Resolve-Path -LiteralPath $expanded).Path; $leaf=(Split-Path $full -Leaf).ToLower();$funcBody="`nfunction global:$leaf {Set-Location `"$full`"}";Invoke-Expression $funcBody;Write-Host "$leaf -> $full"}else{Write-Host -ForegroundColor DarkGray "Skipped missing path: $expanded"}}};""}
+if (!$path) {Write-Host -f cyan "`nDefault locations set:"; Get-Content $LocationsPath | ForEach-Object {$line=$_.Trim();if($line){$expanded=$ExecutionContext.InvokeCommand.ExpandString($line);if(Test-Path $expanded){$full=(Resolve-Path -LiteralPath $expanded).Path; $leaf=(Split-Path $full -Leaf).ToLower();$funcBody="`nfunction global:$leaf {Set-Location `"$full`"}";Invoke-Expression $funcBody;Write-Host "$leaf -> $full"}else{Write-Host -f darkgray "Skipped missing path: $expanded"}}};""}
 
 # Provide valid options
-elseif ($Path -match "(?i)^help$") {Write-Host -ForegroundColor Cyan "`nValid options:"; Write-host -ForegroundColor Yellow "this/current" -NoNewLine; Write-host -ForegroundColor White " - add the current directory path, for this session only"; Write-host -ForegroundColor Yellow "valid path" -NoNewLine; Write-host -ForegroundColor White " - any valid directory path; for this session only"; Write-host -ForegroundColor Yellow "add" -NoNewLine; Write-host -ForegroundColor White " - add an entry to the file"; Write-host -ForegroundColor Yellow "remove" -NoNewLine; Write-host -ForegroundColor White " - select an entry to delete from the file"; Write-host -ForegroundColor Yellow "expunge" -NoNewLine; Write-host -ForegroundColor White " - delete all locations saved in the file"; Write-host -ForegroundColor Yellow "get" -NoNewLine; Write-host -ForegroundColor White " - show all currently created location shortcuts"; Write-host -ForegroundColor Yellow "file" -NoNewLine; Write-host -ForegroundColor White " - entries in the file`n"}
+elseif ($path -match "(?i)^help$") {Write-Host -f cyan "`nValid options:"; Write-host -f yellow "current" -n; Write-host -f white " - add the current directory path, for this session only"; Write-host -f yellow "valid path" -n; Write-host -f white " - any valid directory path; for this session only"; Write-host -f yellow "add" -n; Write-host -f white " - add an entry to the file"; Write-host -f yellow "remove" -n; Write-host -f white " - select an entry to delete from the file"; Write-host -f yellow "expunge" -n; Write-host -f white " - delete all locations saved in the file"; Write-host -f yellow "get" -n; Write-host -f white " - show all currently created location shortcuts"; Write-host -f yellow "file" -n; Write-host -f white " - entries in the file`n"}
 
 # Add the current directory for this session only.
-elseif ($Path -match "(?i)^(this|current)$") {$full=(Get-Location).Path; $leaf=(Split-Path $full -Leaf).ToLower();$funcBody="function global:$leaf {Set-Location `"$full`"}"; Invoke-Expression $funcBody; Write-Host -ForegroundColor Yellow "`nAlias '$leaf' created for '$full'"; getlocations}
+elseif ($path -match "(?i)^(current)$") {$full=(Get-Location).Path; $leaf=(Split-Path $full -Leaf).ToLower();$funcBody="function global:$leaf {Set-Location `"$full`"}"; Invoke-Expression $funcBody; Write-Host -f yellow "`nAlias '$leaf' created for '$full'"; getlocations}
 
 # Add a new destination to the file.
-elseif ($Path -match "(?i)^add$") {$current=(Get-Location).Path; $newPath=Read-Host "Enter the full path to add [`"$current`"]"; if (!$newPath) {$newPath=$current}; $expanded=$ExecutionContext.InvokeCommand.ExpandString($newPath); if (Test-Path $expanded) {$full=((Resolve-Path -LiteralPath $expanded).Path).ToLower(); $leaf=(Split-Path $full -Leaf).ToLower(); $funcBody="function global:$leaf {Set-Location `"$full`"}"; Invoke-Expression $funcBody; $existing=Get-Content $LocationsPath -ErrorAction SilentlyContinue; if($existing -contains $full) {Write-Host -ForegroundColor Cyan "`nAlias '$leaf' already exists for '$full'`n"} else {Add-Content -Path $LocationsPath -Value $full; Write-Host -ForegroundColor Yellow "`nAlias '$leaf' created and saved for '$full'`n"}; GC $LocationsPath;""} else {Write-Host -ForegroundColor Red "`nInvalid path entered: $expanded`n"}}
+elseif ($path -match "(?i)^add$") {$current=(Get-Location).Path; $newPath=Read-Host "Enter the full path to add [`"$current`"]"; if (!$newPath) {$newPath=$current}; $expanded=$ExecutionContext.InvokeCommand.ExpandString($newPath); if (Test-Path $expanded) {$full=((Resolve-Path -LiteralPath $expanded).Path).ToLower(); $leaf=(Split-Path $full -Leaf).ToLower(); $funcBody="function global:$leaf {Set-Location `"$full`"}"; Invoke-Expression $funcBody; $existing=Get-Content $LocationsPath -ErrorAction SilentlyContinue; if($existing -contains $full) {Write-Host -f cyan "`nAlias '$leaf' already exists for '$full'`n"} else {Add-Content -Path $LocationsPath -Value $full; Write-Host -f yellow "`nAlias '$leaf' created and saved for '$full'`n"}; GC $LocationsPath;""} else {Write-Host -f red "`nInvalid path entered: $expanded`n"}}
 
 # Delete an alias created during this session.
-elseif ($Path -match "(?i)^del(ete)?$") {""; $funcs=(Get-Command -Type Function | Where-Object {($_.Definition -match '^Set-Location') -and ($_.Name -notmatch '^(.:|cd..?)$')}); if(-not $funcs) {Write-Host -ForegroundColor Red "`nNo session aliases to delete.`n"; return}; $funcs|ForEach-Object -Begin{$i=1}-Process {Write-Host -NoNewline -ForegroundColor Cyan "$i. "; Write-Host -ForegroundColor White $_.Name; $i++}; $choice=Read-Host "`nEnter the number of the alias to delete"; if ($choice -match '^\d+$' -and $choice -gt 0 -and $choice -le $funcs.Count) {$target=$funcs[$choice-1].Name; Remove-Item "function:$target" -Force -ErrorAction SilentlyContinue; Remove-Item "function:global:$target" -Force -ErrorAction SilentlyContinue; Write-Host -ForegroundColor Yellow "`nAlias '$target' removed from session.`n"} else {Write-Host -ForegroundColor Red "`nInvalid selection.`n"}}
+elseif ($path -match "(?i)^del(ete)?$") {""; $funcs=(Get-Command -Type Function | Where-Object {($_.Definition -match '^Set-Location') -and ($_.Name -notmatch '^(.:|cd..?)$')}); if(-not $funcs) {Write-Host -f red "`nNo session aliases to delete.`n"; return}; $funcs|ForEach-Object -Begin{$i=1}-Process {Write-Host -f cyan "$i. " -n; Write-Host -f white $_.Name; $i++}; $choice=Read-Host "`nEnter the number of the alias to delete"; if ($choice -match '^\d+$' -and $choice -gt 0 -and $choice -le $funcs.Count) {$target=$funcs[$choice-1].Name; Remove-Item "function:$target" -Force -ErrorAction SilentlyContinue; Remove-Item "function:global:$target" -Force -ErrorAction SilentlyContinue; Write-Host -f yellow "`nAlias '$target' removed from session.`n"} else {Write-Host -f red "`nInvalid selection.`n"}}
 
 # Remove an entry from the file.
-elseif ($Path -match "(?i)^rem(ove)?$") {$entries=Get-Content $LocationsPath;if(-not $entries){Write-Host -ForegroundColor Red "`nNo entries to remove.`n";return};$invalid=$entries|Where-Object{!(Test-Path ($ExecutionContext.InvokeCommand.ExpandString($_)))};if($invalid){Write-Host "`nThe following paths no longer exist:`n";$invalid|ForEach-Object{Write-Host -ForegroundColor DarkGray $_};$prune=Read-Host "`nRemove these from the list? (y/n)";if($prune -match '^(y|yes)$'){$entries=$entries|Where-Object {$_ -notin $invalid};Set-Content -Path $LocationsPath -Value $entries;Write-Host -ForegroundColor Yellow "`nRemoved invalid paths.`n"}};$entries|ForEach-Object -Begin{$i=1}-Process{Write-Host "$i. $_";$i++};$choice=Read-Host "`nEnter the number of the path to remove";if($choice -match '^\d+$' -and $choice -gt 0 -and $choice -le $entries.Count){$updated=$entries|Where-Object {$_ -ne $entries[$choice-1]};Set-Content -Path $LocationsPath -Value $updated;Write-Host -ForegroundColor Yellow "`nRemoved entry: $($entries[$choice-1])`n"}else{Write-Host -ForegroundColor Red "`nInvalid selection.`n"}}
+elseif ($path -match "(?i)^rem(ove)?$") {$entries=Get-Content $LocationsPath;if(-not $entries){Write-Host -f red "`nNo entries to remove.`n";return};$invalid=$entries|Where-Object{!(Test-Path ($ExecutionContext.InvokeCommand.ExpandString($_)))};if($invalid){Write-Host "`nThe following paths no longer exist:`n";$invalid|ForEach-Object{Write-Host -f darkgray $_};$prune=Read-Host "`nRemove these from the list? (y/n)";if($prune -match '^(y|yes)$'){$entries=$entries|Where-Object {$_ -notin $invalid};Set-Content -Path $LocationsPath -Value $entries;Write-Host -f yellow "`nRemoved invalid paths.`n"}};$entries|ForEach-Object -Begin{$i=1}-Process{Write-Host "$i. $_";$i++};$choice=Read-Host "`nEnter the number of the path to remove";if($choice -match '^\d+$' -and $choice -gt 0 -and $choice -le $entries.Count){$updated=$entries|Where-Object {$_ -ne $entries[$choice-1]};Set-Content -Path $LocationsPath -Value $updated;Write-Host -f yellow "`nRemoved entry: $($entries[$choice-1])`n"}else{Write-Host -f red "`nInvalid selection.`n"}}
 
 # Remove all entries from the file.
-elseif ($Path -match "(?i)^expunge$") {""; GC $LocationsPath; ""; Write-Host -ForegroundColor Red -NoNewLine "Are you sure you want to delete all entries in the locations file? "; $confirm=Read-Host "(y/n)"; if($confirm -match '^(y|yes)$'){Clear-Content $LocationsPath; Write-Host -ForegroundColor Red "`nAll entries removed from locations file.`n"} else{Write-Host -ForegroundColor DarkGray "`nExpunge cancelled.`n"}}
+elseif ($path -match "(?i)^expunge$") {""; GC $LocationsPath; ""; Write-Host -f red "Are you sure you want to delete all entries in the locations file? " -n; $confirm=Read-Host "(y/n)"; if($confirm -match '^(y|yes)$'){Clear-Content $LocationsPath; Write-Host -f red "`nAll entries removed from locations file.`n"} else{Write-Host -f darkgray "`nExpunge cancelled.`n"}}
 
 # List all entries that exist in the file.
-elseif ($Path -match "(?i)^(file|default)$") {""; Get-Content $LocationsPath | ForEach-Object {if ($_ -match '\S') {$expanded=$ExecutionContext.InvokeCommand.ExpandString($_.Trim());$color=if(Test-Path $expanded){'White'}else{'DarkGray'};Write-Host -ForegroundColor $color "$_$(if($color -eq 'DarkGray'){' (missing)'})"}}; ""}
+elseif ($path -match "(?i)^(file|default)$") {""; Get-Content $LocationsPath | ForEach-Object {if ($_ -match '\S') {$expanded=$ExecutionContext.InvokeCommand.ExpandString($_.Trim());$color=if(Test-Path $expanded){'White'}else{'DarkGray'};Write-Host -f $color "$_$(if($color -eq 'DarkGray'){' (missing)'})"}}; ""}
 
 # List all entries that have been created this session.
-elseif ($Path -match "(?i)^(get|list)$") {getlocations}
+elseif ($path -match "(?i)^(get|list)$") {getlocations}
 
 # Add the path indicated to the current session.
-elseif (Test-Path $Path) {$full=(Resolve-Path -LiteralPath $Path).Path; $leaf=(Split-Path $full -Leaf).ToLower();$funcBody="function global:$leaf {Set-Location `"$full`"}";Invoke-Expression $funcBody;Write-Host -ForegroundColor Yellow "`nAlias '$leaf' created for '$full'"; getlocations}
+elseif (Test-Path $path) {$full=(Resolve-Path -LiteralPath $path).Path; $leaf=(Split-Path $full -Leaf).ToLower();$funcBody="function global:$leaf {Set-Location `"$full`"}";Invoke-Expression $funcBody;Write-Host -f yellow "`nAlias '$leaf' created for '$full'"; getlocations}
 
 # Error capture for invalid paths.
-else {Write-Host -ForegroundColor Red "`nInvalid path: $Path`n"}}
-sal -name locations -value location
+else {Write-Host -f red "`nInvalid path: $path`n"}}
+sal -name location -value locations
 
 # ----------------------------------------------------------------------------------
 #									bookmark function
@@ -368,38 +368,45 @@ sal -name locations -value location
 
 $BookmarkFilePath = $script:BookmarkFilePath 
 
-function bookmark ($mode) {# Use saved bookmarks to navigate or remove entries
-Write-Host -ForegroundColor yellow "`n-------------------------------------------------------------------`n`t`t`tBookmarks:`n-------------------------------------------------------------------"
+function bookmark ($mode) {# Use saved bookmarks to navigate or remove entries.
+Write-Host -f yellow "`n-------------------------------------------------------------------`n`t`t`tBookmarks:`n-------------------------------------------------------------------"
 
 # Validate input.
-if (($mode) -and ($mode -notmatch "(?i)^(list|get|add|this|current|just(explorer?)?|expunge|rem(ove)?|explorer?)$")) {Write-Host -ForegroundColor cyan -NoNewLine "`nInvalid option.`nValid options: "; Write-Host -ForegroundColor yellow "add/this/expunge/remove/explorer/justexplorer`n";return}
+if (($mode) -and ($mode -notmatch "(?i)^(list|get|add|this|current|just(explorer?)?|expunge|rem(ove)?|explorer?|\d\d?)$")) {Write-Host -f cyan "`nInvalid option.`nValid options: " -n; Write-Host -f yellow "add/this/expunge/remove/explorer/justexplorer or a speeddial #`n";return}
 
 # Check if bookmarks file exists and has content.
-if (!(Test-Path $BookmarkFilePath) -or !(Get-Content $BookmarkFilePath | Where-Object {$_ -match '\S'})) {Write-Host -ForegroundColor red "No bookmarks available.`n"; return}
+if (!(Test-Path $BookmarkFilePath) -or !(Get-Content $BookmarkFilePath | Where-Object {$_ -match '\S'})) {Write-Host -f red "No bookmarks available.`n"; return}
+
+# Speeddial
+if ($mode -match "^\d\d?$") {$SpeedDials = Get-Content $BookmarkFilePath; $index = [int]$mode - 1
+if ($index -ge 0 -and $index -lt $SpeedDials.Count) {$SpeedDial = $SpeedDials[$index].Trim(); sl $SpeedDial; Write-Host -f green "`nsl $Speeddial`n"; return}
+else {Write-Host -f cyan "`nInvalid bookmark number.`n"}}
 
 # List entries.
-if ($mode -match "(?i)^(list|get)$") {Write-Host -ForegroundColor cyan "`nSaved bookmarks:`n"; Get-Content $BookmarkFilePath; Write-Host ""; return}
+if ($mode -match "(?i)^(list|get)$") {Write-Host -f cyan "`nSaved bookmarks:`n"; Get-Content $BookmarkFilePath; Write-Host ""; return}
 
 # Add an entry.
-if ($mode -match "(?i)^add(new)?$") {$response=(Read-Host "`nPath").trim(); if (!(Test-Path $response)) {Write-Host -ForegroundColor red "Path does not exist.`n"; return}; $resolved=(Get-Item $response).FullName; if ((Get-Content $BookmarkFilePath) -notcontains $resolved) {Add-Content $BookmarkFilePath $resolved; Write-Host -ForegroundColor green "`nAdded: $resolved"; gc $BookmarkFilePath} else {Write-Host -ForegroundColor yellow "`n$resolved already exists."}; ""; return}
+if ($mode -match "(?i)^add(new)?$") {$response=(Read-Host "`nPath").trim(); if (!(Test-Path $response)) {Write-Host -f red "Path does not exist.`n"; return}; $resolved=(Get-Item $response).FullName; if ((Get-Content $BookmarkFilePath) -notcontains $resolved) {Add-Content $BookmarkFilePath $resolved; Write-Host -f green "`nAdded: $resolved"; gc $BookmarkFilePath} else {Write-Host -f yellow "`n$resolved already exists."}; ""; return}
 
 # Add current.
-if ($mode -match "(?i)^(current|this)$") {$this=(Get-Location).Path; if (!(Get-Content $BookmarkFilePath | Select-String -SimpleMatch $this)) {Add-Content $BookmarkFilePath $this; Write-Host -ForegroundColor green "`n$this added."}; gc $BookmarkFilePath; ""; return}
+if ($mode -match "(?i)^(current)$") {$current=(Get-Location).Path; if (!(Get-Content $BookmarkFilePath | Select-String -SimpleMatch $current)) {Add-Content $BookmarkFilePath $current; Write-Host -f green "`n$current added."}; gc $BookmarkFilePath; ""; return}
 
 # Clear the bookmarks.
-if ($mode -match "(?i)^expunge$") {""; Get-Content $BookmarkFilePath | Select-Object -Unique; ""; font red; [string]$confirm = Read-Host "Are you sure you want to clear all bookmarks? (y/n)"; font white; if ($confirm -ne 'y') {Write-Host -ForegroundColor yellow "Canceled.`n"; return}; Clear-Content $BookmarkFilePath; Write-Host -ForegroundColor green "Bookmarks cleared.`n"; return}
+if ($mode -match "(?i)^expunge$") {""; Get-Content $BookmarkFilePath | Select-Object -Unique; ""; [console]::foregroundcolor = "red"; [string]$confirm = Read-Host "Are you sure you want to clear all bookmarks? (y/n)"; [console]::foregroundcolor = "white"; if ($confirm -ne 'y') {Write-Host -f yellow "Canceled.`n"; return}; Clear-Content $BookmarkFilePath; Write-Host -f green "Bookmarks cleared.`n"; return}
 
 # Load and filter unique bookmarks.
-$lines = Get-Content $BookmarkFilePath | Select-Object -Unique; $validity=@(); Write-Host -ForegroundColor cyan "`nSaved bookmarks:`n"; for ($i=0; $i -lt $lines.Count; $i++) {$exists=Test-Path $lines[$i]; $validity+=$exists; $color = if ($exists) {'white'} else {'darkgray'}; Write-Host -ForegroundColor cyan -NoNewLine "$($i+1):"; Write-Host -ForegroundColor $color (" $($lines[$i])" + ($(if(-not $exists){" (missing)"} else{""})))}
+$lines = Get-Content $BookmarkFilePath | Select-Object -Unique; $validity=@(); Write-Host -f cyan "`nSaved bookmarks:`n"; for ($i=0; $i -lt $lines.Count; $i++) {$exists=Test-Path $lines[$i]; $validity+=$exists; $color = if ($exists) {'white'} else {'darkgray'}; Write-Host -f cyan "$($i+1):" -n; Write-Host -f $color (" $($lines[$i])" + ($(if(-not $exists){" (missing)"} else{""})))}
 
 # If in remove mode, offer to delete non-existent paths.
 if ($mode -match "(?i)^rem(ove)?$") {if ($validity -contains $false) {$nonexistent = @(); for ($i=0; $i -lt $lines.Count; $i++) {if (-not $validity[$i]) {$nonexistent += $lines[$i]}} 
 $response = Read-Host "`nRemove all non-existent entries? (y/n)"; if ($response -match '^[Yy]$') {$lines = $lines | Where-Object {Test-Path $_}; Set-Content -Path $BookmarkFilePath -Value $lines}}
-[int]$selection = Read-Host "`nSelect a bookmark to remove by number, 1 to $($lines.Count)"; if ($selection -lt 1 -or $selection -gt $lines.Count) {Write-Host -ForegroundColor red "Invalid entry. Exiting.`n"; return}; $lines = $lines | Where-Object {$_ -ne $lines[$selection - 1]}; Set-Content -Path $BookmarkFilePath -Value $lines; Write-Host -ForegroundColor green "Bookmark removed.`n"; return}
+[int]$selection = Read-Host "`nSelect a bookmark to remove by number, 1 to $($lines.Count)"; if ($selection -lt 1 -or $selection -gt $lines.Count) {Write-Host -f red "Invalid entry. Exiting.`n"; return}; $lines = $lines | Where-Object {$_ -ne $lines[$selection - 1]}; Set-Content -Path $BookmarkFilePath -Value $lines; Write-Host -f green "Bookmark removed.`n"; return}
 
 # Ask for selection to navigate to.
-[int]$selection = Read-Host "`nSelect a location by number, 1 to $($lines.Count)"; if ($selection -lt 1 -or $selection -gt $lines.Count) {Write-Host -ForegroundColor red "Invalid entry. Exiting.`n"; return}; $destination = $lines[$selection - 1]; if (!(Test-Path $destination)) {Write-Host -ForegroundColor red "Selected path does not exist.`n"; return}; if ($mode -notmatch "(?i)^just(explorer?)?$") {sl $destination}; if($mode -match "(?i)^(just(explorer?)?|explorer?)$") {Start-Process explorer.exe $destination}; ""; return}
+[int]$selection = Read-Host "`nSelect a location by number, 1 to $($lines.Count)"; if ($selection -lt 1 -or $selection -gt $lines.Count) {Write-Host -f red "Invalid entry. Exiting.`n"; return}; $destination = $lines[$selection - 1]; if (!(Test-Path $destination)) {Write-Host -f red "Selected path does not exist.`n"; return}; if ($mode -notmatch "(?i)^just(explorer?)?$") {sl $destination}; if($mode -match "(?i)^(just(explorer?)?|explorer?)$") {Start-Process explorer.exe $destination}; ""; return}
 sal -name bookmarks -value bookmark
+sal -name speeddial -value bookmark -scope global
+sal -name speedial -value bookmark -scope global
 
 # ----------------------------------------------------------------------------------
 #									goto function
@@ -415,21 +422,21 @@ $originalLocation = $Location.ToLowerInvariant(); $matches = @(); $stopwatch = [
 $matches = $GotoFolders | Where-Object {$leaf = ($_ -split '\\')[-1].ToLowerInvariant(); $leaf -like "*$($originalLocation)*"} | ForEach-Object {[PSCustomObject]@{Path = $_; Rel  = $_.Substring($_.IndexOf($root) + $root.Length + 1)}}
 
 # Provide performance feedback
-$stopwatch.Stop(); if ($stopwatch.Elapsed.TotalSeconds -gt 0) {Write-Host -ForegroundColor green -NoNewLine "`nThis search took "; Write-Host -ForegroundColor red -NoNewLine ("{0:N3}" -f $stopwatch.Elapsed.TotalSeconds); Write-Host -ForegroundColor green " seconds to complete."}
+$stopwatch.Stop(); if ($stopwatch.Elapsed.TotalSeconds -gt 0) {Write-Host -f green "`nThis search took " -n; Write-Host -f red ("{0:N3}" -f $stopwatch.Elapsed.TotalSeconds) -n; Write-Host -f green " seconds to complete."}
 
 # If there are more than the set number of matches, attempt to limit to first 4 directory levels.
 if ($matches.Count -gt $GotoCacheMaxMatches) {$earlyMatches = $matches | Where-Object {($_.Rel -split '\\').Count -le 4}
 if ($earlyMatches.Count -le $GotoCacheMaxMatches) {$matches = $earlyMatches}
-else {Write-Host -ForegroundColor cyan -NoNewLine "There are "; Write-Host -ForegroundColor red -NoNewLine "$($matches.Count)"; Write-Host -ForegroundColor cyan -NoNewLine " options matching the pattern `""; Write-Host -ForegroundColor red -NoNewLine "`*$originalLocation`*"; Write-Host -ForegroundColor cyan "`" as a parent directory. Please refine your search.`n"; return}}
+else {Write-Host -f cyan "There are " -n; Write-Host -f red "$($matches.Count)" -n; Write-Host -f cyan " options matching the pattern `"" -n; Write-Host -f red "`*$originalLocation`*" -n; Write-Host -f cyan "`" as a parent directory. Please refine your search.`n"; return}}
 
 # Provide options if more than one match exists.
-if ($matches.Count -gt 1) {write-host -ForegroundColor cyan "Multiple matches found:`n"; for ($i = 0; $i -lt $matches.Count; $i++) {write-host -ForegroundColor cyan -NoNewLine "$($i + 1):"; Write-Host -ForegroundColor white " $($matches[$i].Rel)"}; [int]$selection = Read-Host "`nSelect a location by number, 1 to $($matches.Count)";  if ($selection -lt 1 -or $selection -gt $matches.Count) {Write-Host -ForegroundColor red "Invalid entry. Exiting.`n"; break} else {$match = $matches[$selection - 1]}}
+if ($matches.Count -gt 1) {write-host -f cyan "Multiple matches found:`n"; for ($i = 0; $i -lt $matches.Count; $i++) {write-host -f cyan "$($i + 1):" -n; Write-Host -f white " $($matches[$i].Rel)"}; [int]$selection = Read-Host "`nSelect a location by number, 1 to $($matches.Count)";  if ($selection -lt 1 -or $selection -gt $matches.Count) {Write-Host -f red "Invalid entry. Exiting.`n"; break} else {$match = $matches[$selection - 1]}}
 
 # Set the option if only one match exists.
 elseif ($matches.Count -eq 1) {$match = $matches[0]}
 
 # Return an error if no match exists.
-else {Write-Host -ForegroundColor cyan -NoNewLine "A `""; Write-Host -ForegroundColor red -NoNewLine "*$originalLocation*"; Write-Host -ForegroundColor cyan -NoNewLine "`" directory pattern cannot be found under parent paths: "; for ($i = 0; $i -lt $GotoSearchRoots.Count; $i++) {Write-Host -NoNewLine -ForegroundColor yellow $GotoSearchRoots[$i]; if ($i -lt $GotoSearchRoots.Count - 1) {Write-Host -NoNewLine -ForegroundColor cyan ", "}}; Write-Host -ForegroundColor cyan ".`n"; return}
+else {Write-Host -f cyan "A `"" -n; Write-Host -f red "*$originalLocation*" -n; Write-Host -f cyan "`" directory pattern cannot be found under parent paths: " -n; for ($i = 0; $i -lt $GotoSearchRoots.Count; $i++) {Write-Host -f yellow $GotoSearchRoots[$i] -n; if ($i -lt $GotoSearchRoots.Count - 1) {Write-Host -f cyan ", " -n}}; Write-Host -f cyan ".`n"; return}
 
 # Save last selection, dedup and trim to a set maximum.
 $logEntry = $match.Rel; $existingEntries = @()
@@ -450,27 +457,27 @@ $GotoLogPath = $script:GotoLogPath
 function recent ($mode) {# Use recent goto commands for selecting a destination or removing entries.
 
 # Validate input.
-if (($mode) -and ($mode -notmatch "(?i)^(list|get|clear|rem(ove)?|explorer?)$")) {Write-Host -ForegroundColor yellow -NoNewLine "`nInvalid option.`nValid options: "; Write-Host -ForegroundColor cyan "list/clear/remove/explorer`n";return}
+if (($mode) -and ($mode -notmatch "(?i)^(list|get|clear|rem(ove)?|explorer?)$")) {Write-Host -f yellow "`nInvalid option.`nValid options: " -n; Write-Host -f cyan "list/clear/remove/explorer`n";return}
 
 # Check if previous selections file exists and has content.
-if (!(Test-Path $GotoLogPath) -or !(Get-Content $GotoLogPath | Where-Object {$_ -match '\S'})) {Write-Host -ForegroundColor yellow "No previous selection is available.`n"; return}
+if (!(Test-Path $GotoLogPath) -or !(Get-Content $GotoLogPath | Where-Object {$_ -match '\S'})) {Write-Host -f yellow "No previous selection is available.`n"; return}
 
 # List entries.
-if ($mode -match "(?i)^(list|get)$") {Write-Host -ForegroundColor cyan "`nPreviously selected locations:`n"; Get-Content $GotoLogPath; Write-Host ""; return}
+if ($mode -match "(?i)^(list|get)$") {Write-Host -f cyan "`nPreviously selected locations:`n"; Get-Content $GotoLogPath; Write-Host ""; return}
 
 # Clear the logs.
-if ($mode -match "(?i)^clear$") {""; Get-Content $GotoLogPath | Select-Object -Unique; ""; [string]$confirm = Read-Host "Are you sure you want to clear all saved selections? (y/n)"; if ($confirm -ne 'y') {Write-Host -ForegroundColor yellow "Canceled.`n"; return}; Clear-Content $GotoLogPath; Write-Host -ForegroundColor green "Last selections cleared.`n"; return}
+if ($mode -match "(?i)^clear$") {""; Get-Content $GotoLogPath | Select-Object -Unique; ""; [string]$confirm = Read-Host "Are you sure you want to clear all saved selections? (y/n)"; if ($confirm -ne 'y') {Write-Host -f yellow "Canceled.`n"; return}; Clear-Content $GotoLogPath; Write-Host -f green "Last selections cleared.`n"; return}
 
 # Load and filter unique selections.
-$lines = Get-Content $GotoLogPath | Select-Object -Unique; $validity=@(); Write-Host -ForegroundColor cyan "`nPreviously selected locations:`n"; for ($i=0; $i -lt $lines.Count; $i++) {$exists=Test-Path $lines[$i]; $validity+=$exists; $color = if ($exists) {'white'} else {'darkgray'}; Write-Host -ForegroundColor cyan -NoNewLine "$($i+1):"; Write-Host -ForegroundColor $color (" $($lines[$i])" + ($(if(-not $exists){" (missing)"} else{""})))}
+$lines = Get-Content $GotoLogPath | Select-Object -Unique; $validity=@(); Write-Host -f cyan "`nPreviously selected locations:`n"; for ($i=0; $i -lt $lines.Count; $i++) {$exists=Test-Path $lines[$i]; $validity+=$exists; $color = if ($exists) {'white'} else {'darkgray'}; Write-Host -f cyan "$($i+1):" -n; Write-Host -f $color (" $($lines[$i])" + ($(if(-not $exists){" (missing)"} else{""})))}
 
 # If in remove mode, offer to delete non-existent paths.
 if ($mode -match "(?i)^rem(ove)?$") {if ($validity -contains $false) {$nonexistent = @(); for ($i=0; $i -lt $lines.Count; $i++) {if (-not $validity[$i]) {$nonexistent += $lines[$i]}} 
 $response = Read-Host "`nRemove all non-existent entries? (y/n)"; if ($response -match '^[Yy]$') {$lines = $lines | Where-Object {Test-Path $_}; Set-Content -Path $GotoLogPath -Value $lines}}
-[int]$selection = Read-Host "`nSelect an entry to remove by number, 1 to $($lines.Count)"; if ($selection -lt 1 -or $selection -gt $lines.Count) {Write-Host -ForegroundColor red "Invalid entry. Exiting.`n"; return}; $lines = $lines | Where-Object {$_ -ne $lines[$selection - 1]}; Set-Content -Path $GotoLogPath -Value $lines; Write-Host -ForegroundColor green "Entry removed.`n"; return}
+[int]$selection = Read-Host "`nSelect an entry to remove by number, 1 to $($lines.Count)"; if ($selection -lt 1 -or $selection -gt $lines.Count) {Write-Host -f red "Invalid entry. Exiting.`n"; return}; $lines = $lines | Where-Object {$_ -ne $lines[$selection - 1]}; Set-Content -Path $GotoLogPath -Value $lines; Write-Host -f green "Entry removed.`n"; return}
 
 # Ask for selection to navigate to.
-[int]$selection = Read-Host "`nSelect a location by number, 1 to $($lines.Count)"; if ($selection -lt 1 -or $selection -gt $lines.Count) {Write-Host -ForegroundColor red "Invalid entry. Exiting.`n"; return}; $destination = $lines[$selection - 1]; if (!(Test-Path $destination)) {Write-Host -ForegroundColor red "Selected path does not exist."; return}; sl $destination; if($mode -match "(?i)^explorer?$") {Start-Process explorer.exe $destination}; return}
+[int]$selection = Read-Host "`nSelect a location by number, 1 to $($lines.Count)"; if ($selection -lt 1 -or $selection -gt $lines.Count) {Write-Host -f red "Invalid entry. Exiting.`n"; return}; $destination = $lines[$selection - 1]; if (!(Test-Path $destination)) {Write-Host -f red "Selected path does not exist."; return}; sl $destination; if($mode -match "(?i)^explorer?$") {Start-Process explorer.exe $destination}; return}
 sal -name recents -value recent
 
 # ----------------------------------------------------------------------------------
@@ -479,26 +486,38 @@ sal -name recents -value recent
 
 $GotoCachePath = $script:GotoCachePath; $GotoSearchExclusions = $script:GotoSearchExclusions;
 
-function Get-GotoCache {if (Test-Path $GotoCachePath) {try {return Get-Content $GotoCachePath -Raw | ConvertFrom-Json} catch {return @()}} return @()}
+function getgotocache {if (Test-Path $GotoCachePath) {try {$bytes = [IO.File]::ReadAllBytes($GotoCachePath); $ms = New-Object IO.MemoryStream(,$bytes); $gs = New-Object IO.Compression.GzipStream($ms, [IO.Compression.CompressionMode]::Decompress); $sr = New-Object IO.StreamReader($gs); return $sr.ReadToEnd() | ConvertFrom-Json}
+catch {return @()}}
+return @()}
 
-function Start-GotoCacheRefreshJob {Start-Job -ScriptBlock {try {Write-Host -ForegroundColor Yellow "`nCache refresh job started."; $folders = foreach ($root in $using:GotoSearchRoots) {Write-Host "`nSearching: $root " -NoNewLine; $collected = @($root)
+function startgotocacherefresh {Start-Job -ScriptBlock {try {Write-Host -f yellow "`nCache refresh job started."; $folders = foreach ($root in $using:GotoSearchRoots) {Write-Host "`nSearching: $root " -n; $collected = @($root)
 
 # Recursively get subdirectories up to max depth
 $subdirs = Get-ChildItem -Path $root -Recurse -Directory -Force -ErrorAction SilentlyContinue | Where-Object {($_.FullName.Substring($root.Length+1)).Split('\').Count -le $using:RecursionDepth}
 
 # Filter exclusions and build list
-$collected += $subdirs | ForEach-Object {try {$folderName = $_.Name; if ($using:GotoSearchExclusions -contains $folderName.Substring(0, [Math]::Min($folderName.Length, 12))) {Write-Host  -ForegroundColor Red "Excluding: $($_.FullName) " -NoNewLine} else {$_.FullName}} catch {Write-Host -ForegroundColor Red "." -NoNewLine}}; $collected}
+$collected += $subdirs | ForEach-Object {try {$folderName = $_.Name
+if ($using:GotoSearchExclusions -contains $folderName.Substring(0, [Math]::Min($folderName.Length, 12))) {Write-Host -f red "Excluding: $($_.FullName) " -n}
+else {$_.FullName}}
+catch {Write-Host -f red "." -n}}
+$collected}
 
-$folders = $folders | Sort-Object -Unique; Write-Host "`nFolders found: $($folders.Count)" -ForegroundColor Green; $folders | ConvertTo-Json | Set-Content -Encoding UTF8 $using:GotoCachePath; Write-Host -ForegroundColor Green "Cache file updated: " -NoNewLine; Write-Host -ForegroundColor Yellow "$using:GotoCachePath`n"} catch {Write-Host -ForegroundColor Red "Error during cache refresh: $_"}} | Out-Null; ""}
+$folders = $folders | Sort-Object -Unique; Write-Host "`nFolders found: $($folders.Count)" -f green
+
+# Convert to JSON and compress
+$json = $folders | ConvertTo-Json -Depth 3; $bytes = [System.Text.Encoding]::UTF8.GetBytes($json); $ms = New-Object IO.MemoryStream; $gz = New-Object IO.Compression.GzipStream($ms, [IO.Compression.CompressionMode]::Compress); $gz.Write($bytes, 0, $bytes.Length); $gz.Close(); [IO.File]::WriteAllBytes($using:GotoCachePath, $ms.ToArray())
+
+Write-Host -f green "Cache file updated: " -n; Write-Host -f yellow "$using:GotoCachePath`n"}
+catch {Write-Host -f red "Error during cache refresh: $_"}} | Out-Null; ""}
 
 # Check cache freshness
 $refreshNeeded = $true; if (Test-Path $GotoCachePath) {$lastWrite = (Get-Item $GotoCachePath).LastWriteTime; if (((Get-Date) - $lastWrite).TotalMinutes -lt $GotoCacheMaxAge) {$refreshNeeded = $false}}
 
 # Start refresh if needed
-if ($refreshNeeded) {Start-GotoCacheRefreshJob}
+if ($refreshNeeded) {startgotocacherefresh}
 
 # Load existing cache into memory
-$Global:GotoFolders = Get-GotoCache
+$Global:GotoFolders = getgotocache
 
 # Register autocompletion
 Register-ArgumentCompleter -CommandName goto -ParameterName location -ScriptBlock {param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters); $Global:GotoFolders | Where-Object {$_ -like "*$wordToComplete*"} | Sort-Object -Unique | ForEach-Object {[System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)}}
@@ -507,29 +526,59 @@ Register-ArgumentCompleter -CommandName goto -ParameterName location -ScriptBloc
 #									view goto folder cache
 # ----------------------------------------------------------------------------------
 
-function viewgotocache ($refresh) {# View details about the Goto folder cache.
-$columnWidth = 40; $columnIndex = 0; $entryLengths = @(); $longestLine = ""; $longestLength = 0
+# View details about the Goto folder cache.
+function viewgotocache ($refresh) {$columnWidth = 40; $columnIndex = 0; $entryLengths = @(); $longestLine = ""; $longestLength = 0
 
 # Force a refresh
-if ($refresh -match "(?i)^re(create|fresh)$") {Start-GotoCacheRefreshJob; return}
+if ($refresh -match "(?i)^re(create|fresh)$") {startgotocacherefresh; return}
 
-# Calculations and evaluations.
-gc $GotoCachePath | % {$cleanEntry = $_ -replace '[",\[\]]',''; if ($cleanEntry) {$entryLengths += $cleanEntry.Length}}; $fileInfo = gi $GotoCachePath; $totalEntries = $entryLengths.Count; $averageLength = [math]::Round(($entryLengths | Measure-Object -Average).Average, 1); $medianLength = [math]::Round(($entryLengths | Sort-Object | Select-Object -Skip ([math]::Floor(($entryLengths.Count-1)/2)) -First 1), 1); $shortestLength = ($entryLengths | Measure-Object -Minimum).Minimum; $longestLength = ($entryLengths | Measure-Object -Maximum).Maximum; $fileSize = "{0:N0}" -f $fileInfo.Length; $lastModified = $fileInfo.LastWriteTime; $nonEnglishEntries = @(); gc $GotoCachePath | % {$entry = $_ -replace '[",\[\]]',''; if ($entry -match '[^\x00-\x7F]' -and $entry -notmatch '[꞉“”]' -and $entry) {$nonEnglishEntries += $entry}}
+# Load entries via getgotocache
+$entries = getgotocache
+if (-not $entries -or $entries.Count -eq 0) {Write-Host -f red "`nNo entries found in cache."; return}
 
-# Display non-English table.
-Write-Host -ForegroundColor Cyan "`nGotoCache: " -NoNewLine; Write-Host -ForegroundColor Yellow $GotoCachePath; if ($nonEnglishEntries.Count -gt 0) {Write-Host -ForegroundColor Yellow "`n"$nonEnglishEntries.Count -NoNewLine; Write-Host " Non-English Entries:`n--------------------------`n" -ForegroundColor Cyan; $columnIndex = 0; $nonEnglishEntries | % {$displayEntry = $_.Substring(0, [Math]::Min($columnWidth, $_.Length)); if ($displayEntry.Length -gt $columnWidth) {$displayEntry += '...'}; $columnIndex++; if ($columnIndex % 4 -ne 3) {Write-Host ("{0,-$columnWidth}" -f $displayEntry) -NoNewline} else {Write-Host $displayEntry}}; ""}
+# Calculate stats
+foreach ($entry in $entries) {$cleanEntry = $entry -replace '[",\[\]]',''
+if ($cleanEntry) {$entryLengths += $cleanEntry.Length
+if ($cleanEntry.Length -gt $longestLength) {$longestLength = $cleanEntry.Length; $longestLine = $cleanEntry}}}
 
-# Display stats table.
-Write-Host "`nFile size: " -ForegroundColor Cyan -NoNewline; Write-Host "$fileSize bytes" -ForegroundColor Yellow -NoNewline; Write-Host "`tTotal entries: " -ForegroundColor Cyan -NoNewline; Write-Host $totalEntries -ForegroundColor Yellow -NoNewline; Write-Host "`tLast modified time: " -ForegroundColor Cyan -NoNewline; Write-Host $lastModified -ForegroundColor Yellow; Write-Host "Average length: " -ForegroundColor Cyan -NoNewline; Write-Host $averageLength -ForegroundColor Yellow -NoNewline; Write-Host "`tMedian: " -ForegroundColor Cyan -NoNewline; Write-Host $medianLength -ForegroundColor Yellow -NoNewline; Write-Host "`tShortest: " -ForegroundColor Cyan -NoNewline; Write-Host $shortestLength -ForegroundColor Yellow -NoNewLine; Write-Host "`tLongest: " -ForegroundColor Cyan -NoNewline; Write-Host $longestLength" " -ForegroundColor Yellow; Write-Host "Longest name: " -ForegroundColor Cyan -NoNewline; gc $GotoCachePath | ForEach-Object {if ($_ -and $_.Length -gt $longestLength) {$longestLength = $_.Length; $longestLine = $_ -replace '[",\[\]]',''}}; Write-Host $longestLine; ""
+$fileInfo = Get-Item $GotoCachePath; $totalEntries = $entryLengths.Count; $averageLength = [math]::Round(($entryLengths | Measure-Object -Average).Average, 1); $medianLength = [math]::Round(($entryLengths | Sort-Object | Select-Object -Skip ([math]::Floor(($entryLengths.Count-1)/2)) -First 1), 1); $shortestLength = ($entryLengths | Measure-Object -Minimum).Minimum; $fileSize = "{0:N0}" -f $fileInfo.Length; $lastModified = $fileInfo.LastWriteTime
 
-# Prompt to display entire file.
-$viewAll = Read-Host -Prompt "`e[36mDo you want to view the entire contents of the file? (y/n)`e[0m"; if ($viewAll -match '^(?i)y') {""; $columnIndex = 0; gc $GotoCachePath | % {$cleanEntry = $_ -replace '[",\[\]]',''; if ($cleanEntry.Length -gt $columnWidth) {$cleanEntry = $cleanEntry.Substring(0,$columnWidth-3) + '...'}; if ($columnIndex++ % 4 -ne 3) {Write-Host ("{0,-$columnWidth}" -f $cleanEntry) -NoNewline} else {Write-Host $cleanEntry}}}; ""}
+# Detect non-English
+$nonEnglishEntries = $entries | Where-Object {($_ -match '[^\x00-\x7F]') -and ($_ -notmatch '[꞉“”]') -and $_}
+
+# Show non-English if present
+Write-Host -f cyan "`nGotoCache: " -n; Write-Host -f yellow $GotoCachePath
+
+if ($nonEnglishEntries.Count -gt 0) {Write-Host -f yellow "`n$($nonEnglishEntries.Count)" -n; Write-Host " Non-English Entries:`n--------------------------`n" -f cyan; $columnIndex = 0; $nonEnglishEntries | % {$displayEntry = $_.Substring(0, [Math]::Min($columnWidth, $_.Length))
+if ($displayEntry.Length -gt $columnWidth) {$displayEntry += '...'}
+$columnIndex++
+if ($columnIndex % 4 -ne 3) {Write-Host ("{0,-$columnWidth}" -f $displayEntry) -n}
+else {Write-Host $displayEntry}}; ""}
+
+# Stats output
+Write-Host "`nFile size: " -f cyan -n; Write-Host "$fileSize bytes" -f yellow -n
+Write-Host "`tTotal entries: " -f cyan -n; Write-Host $totalEntries -f yellow -n
+Write-Host "`tLast modified time: " -f cyan -n; Write-Host $lastModified -f yellow
+Write-Host "Average length: " -f cyan -n; Write-Host $averageLength -f yellow -n
+Write-Host "`tMedian: " -f cyan -n; Write-Host $medianLength -f yellow -n
+Write-Host "`tShortest: " -f cyan -n; Write-Host $shortestLength -f yellow -n
+Write-Host "`tLongest: " -f cyan -n; Write-Host "$longestLength " -f yellow
+Write-Host "Longest name: " -f cyan -n; Write-Host $longestLine
+
+# Prompt to view contents
+$viewAll = Read-Host -Prompt "`e[36mDo you want to view the entire contents of the file? (y/n)`e[0m"
+if ($viewAll -match '^(?i)y') {""; $columnIndex = 0; $entries | % {$cleanEntry = $_ -replace '[",\[\]]',''
+if ($cleanEntry.Length -gt $columnWidth) {$cleanEntry = $cleanEntry.Substring(0, $columnWidth-3) + '...'}
+if ($columnIndex++ % 4 -ne 3) {Write-Host ("{0,-$columnWidth}" -f $cleanEntry) -n}
+else {Write-Host $cleanEntry}}}; ""}
+
 sal -name gotocache -value viewgotocache
 
 # ----------------------------------------------------------------------------------
 #									Define External Availability
 # ----------------------------------------------------------------------------------
 
-Export-ModuleMember -Function navigation,bookmark,locations,goto,recent,viewgotocache -Alias bookmarks,recents,jumpto,gotocache
+Export-ModuleMember -Function navigation, bookmark, locations, goto, recent, viewgotocache
+Export-ModuleMember -Alias bookmarks, gotocache, jumpto, location, recents, speedial, speeddials
 
-Write-Host -ForegroundColor Yellow "`nType `"Navigation`" at the command prompt to open the help file for this module and all of its features. "; Write-Host -ForegroundColor Cyan "Copyright © 2025 Craig Plath"
+Write-Host -f yellow "`nType `"Navigation`" at the command prompt to open the help file for this module and all of its features. "; Write-Host -f cyan "Copyright © 2025 Craig Plath"
