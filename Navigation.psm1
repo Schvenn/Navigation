@@ -2,320 +2,68 @@
 #									load configuration
 # ----------------------------------------------------------------------------------
 
-function loadnavigationconfiguration {# (Internal) Load the configuration settings from the PSD1 file.
-# Detect whether the module is under PowerShell or WindowsPowerShell
-$script:baseModulePath = if ($PSVersionTable.PSEdition -eq 'Core') {"$home\Documents\Powershell\Modules\Navigation"} else {"$home\Documents\WindowsPowerShell\Modules\Navigation"}
+# Load the configuration settings from the PSD1 file.
+function loadconfiguration {$script:powershell = Split-Path $profile; $script:baseModulePath = Join-Path $powershell "Modules\Navigation"; $script:configPath = Join-Path $baseModulePath "Navigation.psd1"
 
-$script:configPath = Join-Path $baseModulePath "Navigation.Configuration.psd1"; if (!(Test-Path $configPath)) {throw "Config file not found at $configPath"}
-$script:config = Import-PowerShellDataFile -Path $configPath
+if (!(Test-Path $configPath)) {throw "Config file not found at $configPath"}
 
 # Pull config values into variables
-$script:GotoLogPath = Join-Path $baseModulePath $ExecutionContext.InvokeCommand.ExpandString($config.GotoLogPath)
-$script:GotoCachePath = Join-Path $baseModulePath $ExecutionContext.InvokeCommand.ExpandString($config.GotoCachePath)
-$script:GotoSearchRoots = $config.GotoSearchRoots
-$script:GotoSearchExclusions = $config.GotoSearchExclusions
-$script:GotoCacheMaxAge = $config.GotoCacheMaxAge
-$script:GotoCacheMaxMatches = $config.GotoCacheMaxMatches
-$script:RecursionDepth = $config.RecursionDepth
-$script:GotoCacheSize = $config.GotoCacheSize
-$script:BookmarkFilePath = Join-Path $baseModulePath $ExecutionContext.InvokeCommand.ExpandString($config.BookmarkFilePath)
-$script:LocationsPath = Join-Path $baseModulePath $ExecutionContext.InvokeCommand.ExpandString($config.LocationsPath)}
-loadnavigationconfiguration
+$script:config = Import-PowerShellDataFile -Path $configPath
+$script:GotoLogPath = Join-Path $baseModulePath $config.privatedata.GotoLogPath
+$script:GotoCachePath = Join-Path $baseModulePath $config.privatedata.GotoCachePath
+$script:GotoSearchRoots = $config.privatedata.GotoSearchRoots
+$script:GotoSearchExclusions = $config.privatedata.GotoSearchExclusions
+$script:GotoCacheMaxAge = $config.privatedata.GotoCacheMaxAge
+$script:GotoCacheMaxMatches = $config.privatedata.GotoCacheMaxMatches
+$script:RecursionDepth = $config.privatedata.RecursionDepth
+$script:GotoCacheSize = $config.privatedata.GotoCacheSize
+$script:BookmarkFilePath = Join-Path $baseModulePath $config.privatedata.BookmarkFilePath
+$script:LocationsPath = Join-Path $baseModulePath $config.privatedata.LocationsPath}
+loadconfiguration
 
 # ----------------------------------------------------------------------------------
 #									navigation help function
 # ----------------------------------------------------------------------------------
 
-function tableofcontents {clear-host
-Write-Host -f yellow "`n-------------------------------------------------------------------`n`t`t`tNavigation Help`n-------------------------------------------------------------------`n"
-Write-Host "1. License"
-Write-Host "2. Introduction"
-Write-Host "3. Location(s)"
-Write-Host "4. Bookmark(s)"
-Write-Host "5. Goto"
-Write-Host "6. Recent(s)"
-Write-Host "7. AutoComplete Cache"
-Write-Host "8. ViewGotoCache"
-Write-Host "9. Installation"
-Write-Host "10. Configuration"
-Write-Host "11. Disclaimer"
-Write-Host "Q. Quit"
-Write-Host -f yellow "-------------------------------------------------------------------`n"}
-
-function navigation {# Help screen for this module.
-tableofcontents
-do {$choice = Read-Host "`nEnter a number to view help or Q to quit"
-switch ($choice.ToLower()) {
-'1' {clear-host; tableofcontents; Write-Host @"
-MIT License
-
-Copyright © 2025 Craig Plath
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
-copies of the Software, and to permit persons to whom the Software is 
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in 
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
-THE SOFTWARE.
-"@ -f white}
-'2' {clear-host; tableofcontents; Write-Host @"
-Introduction:
-
-This module was created in response to my desire to make navigating within PowerShell on Windows much more convenient, by adding additional functionality to speed up many command line interactions. Yes, it has been designed with Windows in mind and while a lot of the features will likely work on xNix based systems as well, they have not been tested and I have no idea how well they would work. Some features, like the Explorer functionality, will obviously not work at all outside of Windows.
-
-This started as a simple goto function that allowed me to quickly navigate to any directory on my computer, regardless of which drive it was located on, without having to memorize entire paths or navigate up and down several directories. As anyone who has worked in a shell for any length of time knows, the pain of navigation is real and often entails a lot of change directory commands, followed by listing the directory structure, the another change directory, and so on.
-
-That becomes very cumbersome and so, this project began with simple origins, but kept growing into a larger, far more comprehensive package until now, it is a full suite of navigational tools that helps beginners and power users alike move around within PowerShell much quicker than they normally can; faster even than using Windows Explorer.
-
--------------------------------------------------------------------
-Basic functionality overview:
-
-Location(s) allows you to save and manage "macros" that will navigate to a directory simply by typing it's name and these can either be saved per user session, or permanently, using a persistent file mechanism. Typing "Documents" for example, can take you directly to your documents folder without having to type the entire path or even remembering how deep inside a directory path that location may exist.
-
-Bookmark(s) similarly allows you to navigate to directories with much greater ease. The difference is that this feature presents you with a menu of options that you configure and you simply select a number to hop to that location. This is useful when you have directories of many similar names or names that might overlap with commands and so forth.
-
-Goto was the original function that started this project. It allows a user to jump to a location without having to navigate up and down multiple directories in order to get there. This feature now uses a directory cache and autocompletion features in order to make it exponentially faster. The timer feature will demonstrate just how fast it can be. I have 30k directories saved in my Goto cache and yet, navigating to directories I want to jump to can take under a second and PowerShell can find them in just milliseconds. This is the powerhouse of the package.
-
-Recent(s) allows you to interact with the directories you have previously jumped to using the Goto feature, thereby allowing you to jump back to recent directories with much greater ease.
-
-AutoComplete Cache is the background functionality that creates and maintains the folder cache and provides the autocompletion capabilities.
-
-ViewGotoCache is a bit more obscure, but is interesting for the technical fans. It allows you to interact with the folder cache and display some interesting statistics about it. This has limited functionality, but is somewhat useful and fun for those that care.
-
-Bonus feature: Bookmark(s), Goto and Recent(s) also allow you the option to open the directories you choose in an Explorer window.
-"@ -f white}
-'3' {clear-host; tableofcontents; Write-Host @"
-Location(s):
-
-Location or Locations, if you choose the alias, allows you to dynamically create functions that will redirect you, through means of the set-location command, to any directory you choose, simply by typing it's name. You can either make them on the fly, so that they are only relevant for your current PowerShell session, or you can save them to a file, such that they are loaded everytime you run the locations command without any parameters. I recommend adding this command to the end of your PowerShell profile, so that you have all of your favourite folders ready for you at the launch of every session.
-
-This function is one of the last ones developed and has so many features that I had to create it's own help menu. Here is how you use it:
-
-Parameter:		Purpose:
-_____			If you run location(s) without any parameters, it will read the locations.log file and create commands from all of the paths you have saved there.
-help			This presents a screen with all of the features.
-current			Creates a function for the current path, relevant for the current session only.
-any valid path		Entering any path, tests that path and creates a function for the that folder if valid.
-add			Asks you for a path, (defaults to current) tests and creates it, saving it to the file for repeated use.
-del(ete)		This presents a menu of all items currently active and allows you to remove them.
-re(move)		This presents a menu of all items in the locations file and allows you to remove them.
-expunge			This allows you to delete all entries in the locations file, but asks you for confirmation before proceeding.
-get			This presents a list of all functions created by this command, during the current session.
-file/default		This will simply list all of the entries in the locations file, also indicating broken paths.
-
--------------------------------------------------------------------
-Example usage:
-
-In the example below I navigate to the desktop using a function created by the locations command used without parameters at session load time. As you can see, this function, named for the folder to which it directs you took me there simply by typing the folder name. Next, I create a temporary directory and navigate to it for the purposes of this demonstration. Then I create a function for the current directory, delete the directory and run the location(s) command using the file option to see that the location is now listed as "(missing)", since the path is now broken.
-
-	C:\> desktop
-	C:\Users\Schvenn\Desktop> md blarg; sl blarg; locations add
-	Enter the full path to add ["C:\Users\Schvenn\Desktop\blarg"]:
-
-	Alias 'blarg' created and saved for 'c:\users\schvenn\desktop\blarg'
-
-		`$home\desktop
-		`$home\documents
-		`$home\documents\powershell\modules
-		c:\users\schvenn\desktop\blarg
-
-	C:\Users\Schvenn\Desktop\blarg> cd ..; remove-item blarg
-	C:\Users\Schvenn\Desktop> locations file
-
-		`$home\desktop
-		`$home\documents
-		`$home\documents\powershell\modules
-		c:\users\schvenn\desktop\blarg (missing)
-
-"@ -f white}
-'4' {clear-host; tableofcontents; Write-Host @"
-Bookmark(s):
-
-You may not always want to create folder functions. So, having a navigation list ready is useful, which is why bookmark(s) exist. There is an alias of course, for the alternate spelling. Here is how you use it:
-
-Parameter:		Purpose:
-_____			Running it without a parameter presents you with a menu of your saved bookmarks for immediate navigation.
-invalid input		By typing something invalid, the function will provide you with a list of acceptable parameters.
-list/get		This presents you a list of your bookmarks, without any required interaction.
-add			This allows you to add valid paths to the bookmarks file.
-current			This will add the current path to the bookmarks file.
-expunge			This will delete everything in the bookmarks file, but with a confirmation before proceeding.
-re(move)		This allows you to remove items from the bookmarks file, identifying broken paths.
-explore(r)		This presents a menu of your bookmarks, but opens an Explorer window, as well as navigating to your chosen option.
-justexplore(r)		This will present a menu of your bookmarks, but only open an Explorer window of the chosen option, without navigating there.
-
--------------------------------------------------------------------
-Example usage:
-
-As you can see below, I created a bookmark for the blarg directory, removed that directory and opened the bookmarks again, such that the function now correctly indicates the bookmark is no longer valid.
-
-C:\Users\Schvenn\Desktop> md blarg; sl blarg; bookmark this
-
-	C:\Users\Schvenn\Desktop\blarg added.
-	...
-
-C:\Users\Schvenn\Desktop\blarg> cd ..; remove-item blarg; bookmarks
-
-	Saved bookmarks:
-	...
-	4: D:\Users\Schvenn\Documents\Powershell\Modules
-	5: C:\Users\Schvenn\Desktop\blarg (missing)
-"@ -f white}
-'5' {clear-host; tableofcontents; Write-Host @"
-Goto:
-
-This was the original function and is the most complex in design, but simplest to use. As such, it only accepts two options, a valid path and the optional explorer switch:
-
-	C:\Users\Schvenn\Desktop\blarg> goto documents explorer
-
-You must provide Goto with the name of a folder, at which point, it will search your folder cache, created by the Autocomplete function below and either navigate there, or present you with options to choose from, before navigation. If the folder name or partial string that you provide has too many matches, Goto will tell you to be more specific.
-
-The optional explorer switch will open an Explorer window at the selected location, as well as navigating there.
-
-That is it. This function is designed to be simple and seamless, but wait! There's more! This is where the autocompletion feature comes into play. The first time you use it, PowerShell will take a few minutes to scan the directories you configured and populate its folder cache, after which, you can use TAB to take advantage of this feature. Consider for example, a situation wherein you only know part of the folder name. Type Goto, followed by the part of the folder name that you do know and start using TAB and Shift-TAB to cycle through all the possible options, before selecting the folder you require. This is where the power of this tool becomes immediately evident.
-
-The only other feature to be aware of is the selection history. Every time you use Goto, it will save the directories to which you navigated to in its history file. By default the history is set to 25 entries, but you can configure this to a different size, if you wish. This history cache is used by the next feature, Recent(s).
-"@ -f white}
-'6' {clear-host; tableofcontents; Write-Host @"
-Recent(s):
-
-This function uses the history logs of GoTo. So, the larger you make this cache, the default is 25 entries, the more useful it will likely become. Here are its features:
-
-Parameter:		Purpose:
-_____			By providing no parameters, Recent(s) will present you a menu of the most recent directories to which you navigated with Goto, for quick return.
-list/get		This will simply list the Goto history, without the option to navigate.
-clear			This will delete the Goto history, but only after a confirmation prompt.
-re(move)		This will provide you with a menu of the Goto history and allow you to remove specific entries, useful for maintaining temporary navigation priority.
-explore(r)		This presents a menu of the Goto history, but opens an Explorer window, as well as navigating to your chosen option.
-"@ -f white}
-'7' {clear-host; tableofcontents; Write-Host @"
-AutoComplete Cache:
-
-This set of functions creates the autocompletion feature for Goto, via the command line. It also builds the folder cache and loads it into memory, which is why it's so fast in helping you find your folders. There is nothing here with which the user needs to interact.
-"@ -f white}
-'8' {clear-host; tableofcontents; Write-Host @"
-ViewGotoCache:
-
-This last minute addition is a feature I added more out of curiousity and troubleshooting than anything else, but I found it useful, so I've added it to the package, because I believe it does provide some benefits. Here is how you use it:
-
-Parameter:		Purpose:
-_____			By providing no parameters, ViewGotoCache will generate a screen of statistics about the folder cache, with an option for you to view the entire cache, if you so choose.
-recreate/refresh	This feature will rebuild the foldercache on demand. By default, this is only done every 5 days, adjustable via the configuration file. This option provides no visual output by default
-
--------------------------------------------------------------------
-Here is what you can expect to see:
-
-GotoCache: C:\Users\Schvenn\Documents\Powershell\Modules\Navigation\FolderCache.json
-
- 89 Non-English Entries:
---------------------------
-
-  D:\\Users\\Schvenn\\Audio\\Mystery Cri  D:\\Users\\Schvenn\\Audio\\Mystery Cri  D:\\Users\\Schvenn\\Audio\\Tammy\\Auth
-  ...
-
-File size: 2,187,621 bytes      Total entries: 25718    Last modified time: 4/21/25 11:25:41 AM
-Average length: 80      Median: 75      Shortest: 24    Longest: 167
-Longest name:   D:\\Users\\Schvenn\\...\\In the Midst of Civilized Europe꞉ The Pogroms of 1918-1921 & the Onset of the Holocaust
-
-Do you want to view the entire contents of the file? (y/n):
-
-As you can see above, you get file details; file size, number of entries and last refresh date, as well as entry information, average and median length of folder names, shortest and longest folder name, as well as the actual longest folder name.
-
-The non-English entries table and count helps you to find folder names that may have non-standard characters, such as diacritics. I have excluded only a few: ꞉“”. Those may look like a colon and standard quotation characters, but they are not. Many multimedia files use those characters in order to enable more convenient file naming for values that would otherwise be considered reserved characters.
-
--------------------------------------------------------------------
-If you wish to see the progress of folder cache recreation when you utilize this feature, you will need to run a separate set of commands:
-
-	Get-Job; Receive-Job -ID #
-
-Get-Job is a standard PowerShell function that will present you a table of all background jobs currently running or complete. Use this to find the job ID number of your task; likely "1". Then run the Receive-Job ID command, another standard PowerShell function and provide it the number corresponding to the cache refresh. When you do so, you will likely be presented with output like the example below and while it make take several minutes to complete, the file will be written upon completion. Incidentally, the dots in the output represent folders that were skipped due to permissions issues.
-
-C:\Users\Schvenn> Receive-Job -Id 1
-
-	Cache refresh job started.
-
-	Searching: C:\Users .......................................
-	Searching: D:\Users
-	Searching: E: Excluding: E:\$RECYCLE.BIN ...............
-	Folders found: 25718
-	Cache file updated: C:\Users\Schvenn\Documents\Powershell\Modules\Navigation\FolderCache.json
-"@ -f white}
-'9' {clear-host; tableofcontents; Write-Host @"
-Installation:
-
-Simply copy the Navigation Module folder contained in the installation package to your PowerShell Modules path.
-I also recommend adding the following lines into your PowerShell profile, usually called: Microsoft.PowerShell_profile.ps1
-
-	impo Navigation
-
-At the bottom of the profile, after all other entries, you can also add the following line in order to initialize any immediate navigation directories you have saved at the start of every session:
-
-	locations
-
--------------------------------------------------------------------
-
-This package includes the following files:
-
-License.txt 			- Legal declaration of MIT license.
-Read.me				- Text version of this help .
-Navigation.psm1			- The main module.
-Navigation.psd1			- The standard PowerShell module manifest. I keep this separate for safety's sake.
-Navigation.Configuration.psd1	- Configuration file that you customize. This is the only file you should need to manually adjust.
-
-Additional files will be populated the first time you use specific features:
-
-FolderCache.json 		- The cache created by the AutoComplete function, also used by the Goto function for fast navigation.
-Bookmarks.log 			- A list of all folder booksmarks you've created for fast navigation.
-Locations.log 			- A list of all the immediate navigation directories you have saved.
-History.log 			- A list of the most recent directories you have navigated to using Goto functionality, also used by the Recents function for quick return.
-"@ -f white}
-'10' {clear-host; tableofcontents; Write-Host @"
-Configuration:
-
-Once you have the package installed, you will need to modify the Navigation.Configuration.psd1 file.
-Simply open it in any text editor like Notepad and edit the fields to meet your needs:
-
-@{GotoLogPath = "History.log"
-GotoCachePath = "FolderCache.json"
-GotoSearchRoots = @("C:\Users","D:\Users","E:")
-GotoSearchExclusions = @("`$RECYCLE.BIN","RecycleBin")
-GotoCacheMaxAge = 5
-GotoCacheMaxMatches = 10
-RecursionDepth = 6
-GotoCacheSize = 25
-BookmarkFilePath = "Bookmarks.log"
-LocationsPath = "Locations.log"}
-
-The filenames won't likely need to be renamed, unless you're particularly fussy.
-
-You might want to add or change the GotoSearchRoots in order to define what drives and root pathways you'd like the folder cache to contain. Keep in mind that the more directories you add, the harder it will be to narrow in on your desired location with autocompletion. If you have many directories of the same or similar names in a particular path, this may also make it more difficult to find them, unless you limit your search roots appropriately. You can add and remove entries here. There is no set number.
-
-The GotoCacheMaxAge tells the module how often to refresh the directory listing. Since it takes a few minutes to find all folders and create the cache and since your computer's entire directory structure is not something that would likely change dramatically from day to day, a larger number is likely sufficient. This is measured in days and the default is set to 5.
-
-RecursionDepth can greatly impact performance and effective searches, as well. This number denotes how many directories deep the functions should search, as well as how big the cache should be. I wouldn't recommend going much deeper than 6 and for most people, 4 is likely a better number; striking the balance between performance and completeness.
-
-GotoCacheSize sets the number of recent directory hops to keep in the history. This is used by the Recent(s) functionality.
-"@ -f white}
-'11' {clear-host; tableofcontents; Write-Host @"
-Disclaimer:
-
-Use at your own risk. There is no warranty of any kind, implied or otherwise. I know of nothing here that could possibly cause any disruption, but I'm not going to be held liable for any use or misuse of this package.
-
-This software and the authour are not affliated with any organization. I made this package for my personal use, but feel like it could be useful to others, so I'm sharing it. Do not abuse it.
-"@ -f white}
-'q'  {clear-host}
-default {clear-host; tableofcontents; Write-Host "`nInvalid option. Try again." -f red}}} while ($choice.ToLower() -ne 'q'), ""}
+# Modify fields sent to it with proper word wrapping.
+function wordwrap ($field, $maximumlinelength) {if ($null -eq $field) {return $null}
+$breakchars = ',.;?!\/ '; $wrapped = @()
+if (-not $maximumlinelength) {[int]$maximumlinelength = (100, $Host.UI.RawUI.WindowSize.Width | Measure-Object -Maximum).Maximum}
+if ($maximumlinelength -lt 60) {[int]$maximumlinelength = 60}
+if ($maximumlinelength -gt $Host.UI.RawUI.BufferSize.Width) {[int]$maximumlinelength = $Host.UI.RawUI.BufferSize.Width}
+foreach ($line in $field -split "`n", [System.StringSplitOptions]::None) {if ($line -eq "") {$wrapped += ""; continue}
+$remaining = $line
+while ($remaining.Length -gt $maximumlinelength) {$segment = $remaining.Substring(0, $maximumlinelength); $breakIndex = -1
+foreach ($char in $breakchars.ToCharArray()) {$index = $segment.LastIndexOf($char)
+if ($index -gt $breakIndex) {$breakIndex = $index}}
+if ($breakIndex -lt 0) {$breakIndex = $maximumlinelength - 1}
+$chunk = $segment.Substring(0, $breakIndex + 1); $wrapped += $chunk; $remaining = $remaining.Substring($breakIndex + 1)}
+if ($remaining.Length -gt 0 -or $line -eq "") {$wrapped += $remaining}}
+return ($wrapped -join "`n")}
+
+# Display a horizontal line.
+function line ($colour, $length, [switch]$pre, [switch]$post, [switch]$double) {if (-not $length) {[int]$length = (100, $Host.UI.RawUI.WindowSize.Width | Measure-Object -Maximum).Maximum}
+if ($length) {if ($length -lt 60) {[int]$length = 60}
+if ($length -gt $Host.UI.RawUI.BufferSize.Width) {[int]$length = $Host.UI.RawUI.BufferSize.Width}}
+if ($pre) {Write-Host ""}
+$character = if ($double) {"="} else {"-"}
+Write-Host -f $colour ($character * $length)
+if ($post) {Write-Host ""}}
+
+# Inline help.
+function navigation {function scripthelp ($section) {line yellow 100 -pre; $pattern = "(?ims)^## ($section.*?)(##|\z)"; $match = [regex]::Match($scripthelp, $pattern); $lines = $match.Groups[1].Value.TrimEnd() -split "`r?`n", 2; Write-Host $lines[0] -f yellow; line yellow 100
+if ($lines.Count -gt 1) {wordwrap $lines[1] 100 | Out-String | Out-Host -Paging}; line yellow 100}
+
+$scripthelp = Get-Content -Raw -Path $PSCommandPath; $sections = [regex]::Matches($scripthelp, "(?im)^## (.+?)(?=\r?\n)")
+if ($sections.Count -eq 1) {cls; Write-Host "$([System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath)) Help:" -f cyan; scripthelp $sections[0].Groups[1].Value; ""; return}
+$selection = $null
+do {cls; Write-Host "$([System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath)) Help Sections:`n" -f cyan; for ($i = 0; $i -lt $sections.Count; $i++) {"{0}: {1}" -f ($i + 1), $sections[$i].Groups[1].Value}
+if ($selection) {scripthelp $sections[$selection - 1].Groups[1].Value}
+$input = Read-Host "`nEnter a section number to view"
+if ($input -match '^\d+$') {$index = [int]$input
+if ($index -ge 1 -and $index -le $sections.Count) {$selection = $index}
+else {$selection = $null}} else {""; return}}
+while ($true); return}
 
 # ----------------------------------------------------------------------------------
 #									locations function
@@ -328,11 +76,13 @@ function getlocations {# (Internal) Display all active locations paths.
 
 function locations ($path) {# Creates functions for easy navigation to specific paths.
 
+if ($path) {Write-Host -f yellow "`n-------------------------------------------------------------------`n`t`t`tLocations:`n-------------------------------------------------------------------"}
+
 # Load locations file.
-if (!$path) {Write-Host -f cyan "`nDefault locations set:"; Get-Content $LocationsPath | ForEach-Object {$line=$_.Trim();if($line){$expanded=$ExecutionContext.InvokeCommand.ExpandString($line);if(Test-Path $expanded){$full=(Resolve-Path -LiteralPath $expanded).Path; $leaf=(Split-Path $full -Leaf).ToLower();$funcBody="`nfunction global:$leaf {Set-Location `"$full`"}";Invoke-Expression $funcBody;Write-Host "$leaf -> $full"}else{Write-Host -f darkgray "Skipped missing path: $expanded"}}};""}
+if (!$path) {Write-Host -f cyan "`nDefault locations set:"; Get-Content $LocationsPath | ForEach-Object {$line=$_.Trim();if($line){$expanded=$ExecutionContext.InvokeCommand.ExpandString($line);if(Test-Path $expanded){$full=(Resolve-Path -LiteralPath $expanded).Path; $leaf=(Split-Path $full -Leaf).ToLower();$funcBody="`nfunction global:$leaf {Set-Location `"$full`"}";Invoke-Expression $funcBody;Write-Host "$leaf -> $full"}else{Write-Host -f darkgray "Skipped missing path: $expanded"}}};""; return}
 
 # Provide valid options
-elseif ($path -match "(?i)^help$") {Write-Host -f cyan "`nValid options:"; Write-host -f yellow "current" -n; Write-host -f white " - add the current directory path, for this session only"; Write-host -f yellow "valid path" -n; Write-host -f white " - any valid directory path; for this session only"; Write-host -f yellow "add" -n; Write-host -f white " - add an entry to the file"; Write-host -f yellow "remove" -n; Write-host -f white " - select an entry to delete from the file"; Write-host -f yellow "expunge" -n; Write-host -f white " - delete all locations saved in the file"; Write-host -f yellow "get" -n; Write-host -f white " - show all currently created location shortcuts"; Write-host -f yellow "file" -n; Write-host -f white " - entries in the file`n"}
+elseif ($path -match "(?i)^help$") {Write-Host -f cyan "Valid options: " -n; Write-host -f yellow "current/valid path/add/remove/expunge/get/file`n"}
 
 # Add the current directory for this session only.
 elseif ($path -match "(?i)^(current)$") {$full=(Get-Location).Path; $leaf=(Split-Path $full -Leaf).ToLower();$funcBody="function global:$leaf {Set-Location `"$full`"}"; Invoke-Expression $funcBody; Write-Host -f yellow "`nAlias '$leaf' created for '$full'"; getlocations}
@@ -372,7 +122,8 @@ function bookmark ($mode) {# Use saved bookmarks to navigate or remove entries.
 Write-Host -f yellow "`n-------------------------------------------------------------------`n`t`t`tBookmarks:`n-------------------------------------------------------------------"
 
 # Validate input.
-if (($mode) -and ($mode -notmatch "(?i)^(list|get|add|this|current|just(explorer?)?|expunge|rem(ove)?|explorer?|\d\d?)$")) {Write-Host -f cyan "`nInvalid option.`nValid options: " -n; Write-Host -f yellow "add/this/expunge/remove/explorer/justexplorer or a speeddial #`n";return}
+if (($mode) -and ($mode -notmatch "(?i)^(list|get|add|this|current|just(explorer?)?|expunge|rem(ove)?|explorer?|\d\d?)$")) {if ($mode -notmatch "(?i)^help") {Write-Host -f cyan "Invalid option."}
+Write-Host -f cyan "Valid options: " -n; Write-Host -f yellow "add/this/expunge/remove/explorer/justexplorer/##/help"; Write-Host -f cyan "Numbered parameters represent speeddials for immediate naviation.`n";return}
 
 # Check if bookmarks file exists and has content.
 if (!(Test-Path $BookmarkFilePath) -or !(Get-Content $BookmarkFilePath | Where-Object {$_ -match '\S'})) {Write-Host -f red "No bookmarks available.`n"; return}
@@ -418,11 +169,13 @@ $GotoSearchRoots = $script:GotoSearchRoots; $GotoCacheMaxAge = $script:GotoCache
 function goto ($location,$explorer) {# Custom-recursive directory search, case-insensitive, with autocomplete, history and max depth.
 $originalLocation = $Location.ToLowerInvariant(); $matches = @(); $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
+Write-Host -f yellow "`n-------------------------------------------------------------------`n`t`t`tGoTo:`n-------------------------------------------------------------------"
+
 # Iterate through all entries in the cache and filter early
 $matches = $GotoFolders | Where-Object {$leaf = ($_ -split '\\')[-1].ToLowerInvariant(); $leaf -like "*$($originalLocation)*"} | ForEach-Object {[PSCustomObject]@{Path = $_; Rel  = $_.Substring($_.IndexOf($root) + $root.Length + 1)}}
 
 # Provide performance feedback
-$stopwatch.Stop(); if ($stopwatch.Elapsed.TotalSeconds -gt 0) {Write-Host -f green "`nThis search took " -n; Write-Host -f red ("{0:N3}" -f $stopwatch.Elapsed.TotalSeconds) -n; Write-Host -f green " seconds to complete."}
+$stopwatch.Stop(); if ($stopwatch.Elapsed.TotalSeconds -gt 0) {Write-Host -f green "This search took " -n; Write-Host -f red ("{0:N3}" -f $stopwatch.Elapsed.TotalSeconds) -n; Write-Host -f green " seconds to complete."}
 
 # If there are more than the set number of matches, attempt to limit to first 4 directory levels.
 if ($matches.Count -gt $GotoCacheMaxMatches) {$earlyMatches = $matches | Where-Object {($_.Rel -split '\\').Count -le 4}
@@ -455,9 +208,10 @@ sal -name jumpto -value goto
 $GotoLogPath = $script:GotoLogPath
 
 function recent ($mode) {# Use recent goto commands for selecting a destination or removing entries.
-
+Write-Host -f yellow "`n-------------------------------------------------------------------`n`t`t`tRecent:`n-------------------------------------------------------------------"
 # Validate input.
-if (($mode) -and ($mode -notmatch "(?i)^(list|get|clear|rem(ove)?|explorer?)$")) {Write-Host -f yellow "`nInvalid option.`nValid options: " -n; Write-Host -f cyan "list/clear/remove/explorer`n";return}
+if (($mode) -and ($mode -notmatch "(?i)^(list|get|clear|rem(ove)?|explorer?)$")) {if ($mode -notmatch "(?i)^help") {Write-Host -f cyan "`nInvalid option."}
+Write-Host -f cyan "Valid options: " -n; Write-Host -f yellow "list/clear/remove/explorer/help`n";return}
 
 # Check if previous selections file exists and has content.
 if (!(Test-Path $GotoLogPath) -or !(Get-Content $GotoLogPath | Where-Object {$_ -match '\S'})) {Write-Host -f yellow "No previous selection is available.`n"; return}
@@ -529,12 +283,14 @@ Register-ArgumentCompleter -CommandName goto -ParameterName location -ScriptBloc
 # View details about the Goto folder cache.
 function viewgotocache ($refresh) {$columnWidth = 40; $columnIndex = 0; $entryLengths = @(); $longestLine = ""; $longestLength = 0
 
+Write-Host -f yellow "`n-------------------------------------------------------------------`n`t`t`tViewGoToCache:`n-------------------------------------------------------------------"
+
 # Force a refresh
 if ($refresh -match "(?i)^re(create|fresh)$") {startgotocacherefresh; return}
 
 # Load entries via getgotocache
 $entries = getgotocache
-if (-not $entries -or $entries.Count -eq 0) {Write-Host -f red "`nNo entries found in cache."; return}
+if (-not $entries -or $entries.Count -eq 0) {Write-Host -f red "No entries found in cache."; return}
 
 # Calculate stats
 foreach ($entry in $entries) {$cleanEntry = $entry -replace '[",\[\]]',''
@@ -547,12 +303,14 @@ $fileInfo = Get-Item $GotoCachePath; $totalEntries = $entryLengths.Count; $avera
 $nonEnglishEntries = $entries | Where-Object {($_ -match '[^\x00-\x7F]') -and ($_ -notmatch '[꞉“”]') -and $_}
 
 # Show non-English if present
-Write-Host -f cyan "`nGotoCache: " -n; Write-Host -f yellow $GotoCachePath
+Write-Host -f cyan "GotoCache: " -n; Write-Host -f yellow $GotoCachePath
 
-if ($nonEnglishEntries.Count -gt 0) {Write-Host -f yellow "`n$($nonEnglishEntries.Count)" -n; Write-Host " Non-English Entries:`n--------------------------`n" -f cyan; $columnIndex = 0; $nonEnglishEntries | % {$displayEntry = $_.Substring(0, [Math]::Min($columnWidth, $_.Length))
+if ($nonEnglishEntries.Count -gt 0) {Write-Host -f yellow "`n$($nonEnglishEntries.Count)" -n; Write-Host " Non-English Entries:`n--------------------------`n" -f cyan; 
+$consoleWidth = [Console]::WindowWidth; $padding = 1; $columnWidth = [Math]::Floor(($consoleWidth - $padding) / 2)
+$columnIndex = 0; $nonEnglishEntries | % {$displayEntry = $_.Substring(0, [Math]::Min($columnWidth, $_.Length))
 if ($displayEntry.Length -gt $columnWidth) {$displayEntry += '...'}
 $columnIndex++
-if ($columnIndex % 4 -ne 3) {Write-Host ("{0,-$columnWidth}" -f $displayEntry) -n}
+if ($columnIndex % 2 -ne 0) {Write-Host ("{0,-$($columnWidth+1)}" -f $displayEntry) -n}
 else {Write-Host $displayEntry}}; ""}
 
 # Stats output
@@ -566,11 +324,106 @@ Write-Host "`tLongest: " -f cyan -n; Write-Host "$longestLength " -f yellow
 Write-Host "Longest name: " -f cyan -n; Write-Host $longestLine
 
 # Prompt to view contents
-$viewAll = Read-Host -Prompt "`e[36mDo you want to view the entire contents of the file? (y/n)`e[0m"
-if ($viewAll -match '^(?i)y') {""; $columnIndex = 0; $entries | % {$cleanEntry = $_ -replace '[",\[\]]',''
-if ($cleanEntry.Length -gt $columnWidth) {$cleanEntry = $cleanEntry.Substring(0, $columnWidth-3) + '...'}
-if ($columnIndex++ % 4 -ne 3) {Write-Host ("{0,-$columnWidth}" -f $cleanEntry) -n}
-else {Write-Host $cleanEntry}}}; ""}
+Write-Host -f yellow "`nDo you want to view the entire contents of the file? (Y/N) " -n; $viewAll = Read-Host
+if ($viewAll -match '^(?i)y') {$content = getgotocache
+$searchHits = @(0..($content.Count - 1) | Where-Object {$content[$_] -match $pattern})
+$currentSearchIndex = $searchHits | Where-Object {$_ -gt $pos} | Select-Object -First 1; $pos = $currentSearchIndex; $content = $content | ForEach-Object {wordwrap $_ $null} | ForEach-Object {$_ -split "`n"}
+$pageSize = 44; $pos = 0; $script:fileName = [System.IO.Path]::GetFileName($script:file); $searchHits = @(); $currentSearchIndex = -1
+
+function getbreakpoint {param($start); return [Math]::Min($start + $pageSize - 1, $content.Count - 1)}
+
+function showpage {cls; $start = $pos; $end = getbreakpoint $start; $pageLines = $content[$start..$end]; $highlight = if ($searchTerm) {"$pattern"} else {$null}
+foreach ($line in $pageLines) {if ($highlight -and $line -match $highlight) {$parts = [regex]::Split($line, "($highlight)")
+foreach ($part in $parts) {if ($part -match "^$highlight$") {Write-Host -f black -b yellow $part -n}
+else {Write-Host -f white $part -n}}; ""}
+else {Write-Host -f white $line}}
+
+# Pad with blank lines if this page has fewer than $pageSize lines
+$linesShown = $end - $start + 1
+if ($linesShown -lt $pageSize) {for ($i = 1; $i -le ($pageSize - $linesShown); $i++) {Write-Host ""}}}
+
+# Main menu loop
+$statusmessage = ""; $errormessage = ""; $searchmessage = "Search Commands"
+while ($true) {showpage; $pageNum = [math]::Floor($pos / $pageSize) + 1; $totalPages = [math]::Ceiling($content.Count / $pageSize)
+if ($searchHits.Count -gt 0) {$currentMatch = [array]::IndexOf($searchHits, $pos); if ($currentMatch -ge 0) {$searchmessage = "Match $($currentMatch + 1) of $($searchHits.Count)"}
+else {$searchmessage = "Search active ($($searchHits.Count) matches)"}}
+
+line yellow -double
+if (-not $errormessage -or $errormessage.length -lt 1) {$middlecolour = "white"; $middle = $statusmessage} else {$middlecolour = "red"; $middle = $errormessage}
+$left = "$([System.IO.Path]::GetFileName($script:GotoCachePath))".PadRight(57); $middle = "$middle".PadRight(44); $right = "(Page $pageNum of $totalPages)"
+Write-Host -f white $left -n; Write-Host -f $middlecolour $middle -n; Write-Host -f cyan $right
+$left = "Page Commands".PadRight(55); $middle = "| $searchmessage ".PadRight(34); $right = "| Exit Commands"
+Write-Host -f yellow ($left + $middle + $right)
+Write-Host -f yellow "[F]irst [N]ext [+/-]# Lines P[A]ge # [P]revious [L]ast | [<][S]earch[>] [#]Match [C]lear | [Q]uit " -n
+$statusmessage = ""; $errormessage = ""; $searchmessage = "Search Commands"
+
+function getaction {[string]$buffer = ""
+while ($true) {$key = [System.Console]::ReadKey($true)
+switch ($key.Key) {'LeftArrow' {return 'P'}
+'UpArrow' {return 'U1L'}
+'Backspace' {return 'P'}
+'PageUp' {return 'P'}
+'RightArrow' {return 'N'}
+'DownArrow' {return 'D1L'}
+'PageDown' {return 'N'}
+'Enter' {if ($buffer) {return $buffer}
+else {return 'N'}}
+'Home' {return 'F'}
+'End' {return 'L'}
+default {$char = $key.KeyChar
+switch ($char) {',' {return '<'}
+'.' {return '>'}
+{$_ -match '(?i)[B-Z]'} {return $char.ToString().ToUpper()}
+{$_ -match '[A#\+\-\d]'} {$buffer += $char}
+default {$buffer = ""}}}}}}
+
+$action = getaction
+
+switch ($action.ToString().ToUpper()) {'F' {$pos = 0}
+'N' {$next = getbreakpoint $pos; if ($next -lt $content.Count - 1) {$pos = $next + 1}
+else {$pos = [Math]::Min($pos + $pageSize, $content.Count - 1)}}
+'P' {$pos = [Math]::Max(0, $pos - $pageSize)}
+'L' {$lastPageStart = [Math]::Max(0, [int][Math]::Floor(($content.Count - 1) / $pageSize) * $pageSize); $pos = $lastPageStart}
+
+'<' {$currentSearchIndex = ($searchHits | Where-Object {$_ -lt $pos} | Select-Object -Last 1)
+if ($null -eq $currentSearchIndex -and $searchHits -ne @()) {$currentSearchIndex = $searchHits[-1]; $statusmessage = "Wrapped to last match."; $errormessage = $null}
+$pos = $currentSearchIndex
+if (-not $searchHits -or $searchHits.Count -eq 0) {$errormessage = "No search in progress."; $statusmessage = $null}}
+'S' {Write-Host -f green "`n`nKeyword to search forward from this point in the logs" -n; $searchTerm = Read-Host " "
+if (-not $searchTerm) {$errormessage = "No keyword entered."; $statusmessage = $null; $searchTerm = $null; $searchHits = @(); continue}
+$pattern = "(?i)$searchTerm"; $searchHits = @(0..($content.Count - 1) | Where-Object { $content[$_] -match $pattern })
+if ($searchHits.Count -eq 0) {$errormessage = "Keyword not found in file."; $statusmessage = $null; $currentSearchIndex = -1}
+else {$currentSearchIndex = $searchHits | Where-Object { $_ -gt $pos } | Select-Object -First 1
+if ($null -eq $currentSearchIndex) {Write-Host -f green "No match found after this point. Jump to first match? (Y/N)" -n; $wrap = Read-Host " "
+if ($wrap -match '^[Yy]$') {$currentSearchIndex = $searchHits[0]; $statusmessage = "Wrapped to first match."; $errormessage = $null}
+else {$errormessage = "Keyword not found further forward."; $statusmessage = $null; $searchHits = @(); $searchTerm = $null}}
+$pos = $currentSearchIndex}}
+'>' {$currentSearchIndex = ($searchHits | Where-Object {$_ -gt $pos} | Select-Object -First 1)
+if ($null -eq $currentSearchIndex -and $searchHits -ne @()) {$currentSearchIndex = $searchHits[0]; $statusmessage = "Wrapped to first match."; $errormessage = $null}
+$pos = $currentSearchIndex
+if (-not $searchHits -or $searchHits.Count -eq 0) {$errormessage = "No search in progress."; $statusmessage = $null}}
+'C' {$searchTerm = $null; $searchHits.Count = 0; $searchHits = @(); $currentSearchIndex = $null}
+
+'Q' {cls; return}
+'U1L' {$pos = [Math]::Max($pos - 1, 0)}
+'D1L' {$pos = [Math]::Min($pos + 1, $content.Count - $pageSize)}
+
+default {if ($action -match '^[\+\-](\d+)$') {$offset = [int]$action; $newPos = $pos + $offset; $pos = [Math]::Max(0, [Math]::Min($newPos, $content.Count - $pageSize))}
+
+elseif ($action -match '^(\d+)$') {$jump = [int]$matches[1]
+if (-not $searchHits -or $searchHits.Count -eq 0) {$errormessage = "No search in progress."; $statusmessage = $null; continue}
+$targetIndex = $jump - 1
+if ($targetIndex -ge 0 -and $targetIndex -lt $searchHits.Count) {$pos = $searchHits[$targetIndex]
+if ($targetIndex -eq 0) {$statusmessage = "Jumped to first match."}
+else {$statusmessage = "Jumped to match #$($targetIndex + 1)."}; $errormessage = $null}
+else {$errormessage = "Match #$jump is out of range."; $statusmessage = $null}}
+
+elseif ($action -match '^A(\d+)$') {$requestedPage = [int]$matches[1]
+if ($requestedPage -lt 1 -or $requestedPage -gt $totalPages) {$errormessage = "Page #$requestedPage is out of range."; $statusmessage = $null}
+else {$pos = ($requestedPage - 1) * $pageSize}}
+
+else {$errormessage = "Invalid input."; $statusmessage = $null}}}}}
+else {""}}
 
 sal -name gotocache -value viewgotocache
 
@@ -582,3 +435,210 @@ Export-ModuleMember -Function navigation, bookmark, locations, goto, recent, vie
 Export-ModuleMember -Alias bookmarks, gotocache, jumpto, location, recents, speedial, speeddials
 
 Write-Host -f yellow "`nType `"Navigation`" at the command prompt to open the help file for this module and all of its features. "; Write-Host -f cyan "Copyright © 2025 Craig Plath"
+
+# ----------------------------------------------------------------------------------
+#									Helptext
+# ----------------------------------------------------------------------------------
+
+<#
+## Introduction
+This module was created in response to my desire to make navigating within PowerShell on Windows much more convenient, by adding additional functionality to speed up many command line interactions. Yes, it has been designed with Windows in mind and while a lot of the features will likely work on xNix based systems as well, they have not been tested and I have no idea how well they would work. Some features, like the Explorer functionality, will obviously not work at all outside of Windows.
+
+This started as a simple goto function that allowed me to quickly navigate to any directory on my computer, regardless of which drive it was located on, without having to memorize entire paths or navigate up and down several directories. As anyone who has worked in a shell for any length of time knows, the pain of navigation is real and often entails a lot of change directory commands, followed by listing the directory structure, the another change directory, and so on.
+
+That becomes very cumbersome and so, this project began with simple origins, but kept growing into a larger, far more comprehensive package until now, it is a full suite of navigational tools that helps beginners and power users alike move around within PowerShell much quicker than they normally can; faster even than using Windows Explorer.
+
+## Basic Functionality
+Location(s) allows you to save and manage "macros" that will navigate to a directory simply by typing it's name and these can either be saved per user session, or permanently, using a persistent file mechanism.
+
+Bookmark(s) similarly allows you to navigate to directories with much greater ease. The difference is that this feature presents you with a menu of options that you configure and you simply select a number to hop to that location.
+
+Goto was the original function that started this project. It allows a user to jump to a location using a directory cache and autocompletion feature in order to make it exponentially faster. The timer feature will demonstrate just how fast it can be. I have 30k directories saved and yet, navigating to directories can take under a second.
+
+Recent(s) allows you to interact with the directories you have previously jumped to using the Goto feature, thereby allowing you to jump back to recent directories with much greater ease.
+
+AutoComplete Cache is the background functionality that creates and maintains the folder cache and provides the autocompletion capabilities.
+
+ViewGotoCache is a bit more obscure, but is interesting for the technical fans. It allows you to interact with the folder cache and display some interesting statistics about it. This has limited functionality, but is somewhat useful and fun for those that care.
+
+Bonus feature: Bookmark(s), Goto and Recent(s) also allow you the option to open the directories you choose in an Explorer window.
+## Location
+Location or Locations, if you choose the alias, allows you to dynamically create functions that will redirect you, through means of the set-location command, to any directory you choose, simply by typing it's name. You can either make them on the fly, so that they are only relevant for your current PowerShell session, or you can save them to a file, such that they are loaded everytime you run the locations command without any parameters.
+
+Parameter:     Purpose:
+_____          Load entries from the Locations.log file.
+help           This help menu.
+current        Creates a function for the current path, relevant for the current session only.
+path           Tests the path and creates a function for the that folder if valid.
+add            Asks you for a path, defaults to the current, tests and saves it if valid.
+del(ete)       Removes saved locations from the Locations.log file.
+re(move)       Removes saved locations from the Locations.log file.
+expunge        Delete all entries from the Locations.log file.
+get            Lists all locations relevant during the current session, including temporary.
+file/default   Lists all locations in the Locations.log file.
+
+## Location Usage
+In the example below I navigate to the desktop using a function created by the locations command used without parameters at session load time. As you can see, this function, named for the folder to which it directs you took me there simply by typing the folder name. Next, I create a temporary directory and navigate to it for the purposes of this demonstration. Then I create a function for the current directory, delete the directory and run the location(s) command using the file option to see that the location is now listed as "(missing)", since the path is now broken.
+
+	C:\> desktop
+	C:\Users\Schvenn\Desktop> md blarg; sl blarg; locations add
+	Enter the full path to add ["C:\Users\Schvenn\Desktop\blarg"]:
+
+	Alias 'blarg' created and saved for 'c:\users\schvenn\desktop\blarg'
+
+		`$home\desktop
+		`$home\documents
+		`$home\documents\powershell\modules
+		c:\users\schvenn\desktop\blarg
+
+	C:\Users\Schvenn\Desktop\blarg> cd ..; remove-item blarg
+	C:\Users\Schvenn\Desktop> locations file
+
+		`$home\desktop
+		`$home\documents
+		`$home\documents\powershell\modules
+		c:\users\schvenn\desktop\blarg (missing)
+## Bookmark
+You may not always want to create folder functions. So, having a navigation list ready is useful, which is why bookmark(s) exist. There is an alias of course, for the alternate spelling. Here is how you use it:
+
+Parameter:         Purpose:
+_____              A menu will present your saved bookmarks for immediate navigation.
+help               Provides valid command line options.
+invalid value      Provides valid command line options.
+list/get           List your bookmarks.
+add                Add valid paths to the bookmarks file.
+current            Add the current path to the bookmarks file.
+expunge            Delete everything in the bookmarks file.
+re(move)           Remove items from the bookmarks file, identifying broken paths.
+explore(r)         Opens an Explorer window, as well as navigating to your chosen option.
+justexplore(r)     Open an Explorer window, without navigating there.
+## Bookmark Usage
+As you can see below, I created a bookmark for the blarg directory, removed that directory and opened the bookmarks again, such that the function now correctly indicates the bookmark is no longer valid.
+
+C:\Users\Schvenn\Desktop> md blarg; sl blarg; bookmark this
+
+	C:\Users\Schvenn\Desktop\blarg added.
+	...
+
+C:\Users\Schvenn\Desktop\blarg> cd ..; remove-item blarg; bookmarks
+
+	Saved bookmarks:
+	...
+	4: D:\Users\Schvenn\Documents\Powershell\Modules
+	5: C:\Users\Schvenn\Desktop\blarg (missing)
+## Goto
+This was the original function and is the most complex in design, but simplest to use. As such, it only accepts two options, a valid path and the optional explorer switch:
+
+	C:\Users\Schvenn\Desktop\blarg> goto documents explorer
+
+You must provide Goto with the name of a folder, at which point, it will search your folder cache, created by the Autocomplete function below and either navigate there, or present you with options to choose from, before navigation. If the folder name or partial string that you provide has too many matches, Goto will tell you to be more specific.
+
+The optional explorer switch will open an Explorer window at the selected location, as well as navigating there.
+
+That is it. This function is designed to be simple and seamless, but wait! There's more! This is where the autocompletion feature comes into play. The first time you use it, PowerShell will take a few minutes to scan the directories you configured and populate its folder cache, after which, you can use TAB to take advantage of this feature. Consider for example, a situation wherein you only know part of the folder name. Type Goto, followed by the part of the folder name that you do know and start using TAB and Shift-TAB to cycle through all the possible options, before selecting the folder you require. This is where the power of this tool becomes immediately evident.
+
+The only other feature to be aware of is the selection history. Every time you use Goto, it will save the directories to which you navigated to in its history file. By default the history is set to 25 entries, but you can configure this to a different size, if you wish. This history cache is used by the next feature, Recent(s).
+## Recent
+This function uses the history logs of GoTo. So, the larger you make this cache, the default is 25 entries, the more useful it will likely become. Here are its features:
+
+Parameter:     Purpose:
+_____          A menu will present the most recent Goto directories used, for quick return.
+help           Provides valid command line options.
+invalid value  Provides valid command line options.
+list/get       List the Goto history, without the option to navigate.
+clear          This will delete the Goto history, but only after a confirmation prompt.
+re(move)       A menu of the Goto history will allow you to remove specific entries.
+explore(r)     Also opens an Explorer window, as well as navigating to your chosen option.
+## AutoComplete Cache
+This set of functions creates the autocompletion feature for Goto, via the command line. It also builds the folder cache and loads it into memory, which is why it's so fast in helping you find your folders. There is nothing here with which the user needs to interact.
+## ViewGotoCache
+This is for those who really want to dig into the efficiencies of the module.
+
+Parameter:           Purpose:
+_____                ViewGotoCache will provide cache details with a view option.
+recreate/refresh     This feature will rebuild the foldercache on demand, regardless of schedule.
+
+Once the cache is populated, running ViewGotoCache will provide you summary details including: entries with non-English characters, file size, number of entries and last refresh date, as well as entry information, average and median length of folder names, shortest and longest folder name, as well as the actual longest folder name.
+
+The non-English entries table and count helps you to find folder names that may have non-standard characters, such as diacritics. I have excluded only a few: ꞉“”. Those may look like a colon and standard quotation characters, but they are not. Many multimedia files use those characters in order to enable more convenient file naming for values that would otherwise be considered reserved characters.
+## Viewing Gotocache Refresh
+If you wish to see the progress of folder cache recreation when you utilize this feature, you will need to run a separate set of commands:
+
+	Get-Job; Receive-Job -ID #
+
+Get-Job is a standard PowerShell function that will present you a table of all background jobs currently running or complete. Use this to find the job ID number of your task; likely "1". Then run the Receive-Job ID command, another standard PowerShell function and provide it the number corresponding to the cache refresh. When you do so, you will likely be presented with output like the example below and while it make take several minutes to complete, the file will be written upon completion. Incidentally, the dots in the output represent folders that were skipped due to permissions issues.
+
+C:\Users\Schvenn> Receive-Job -Id 1
+
+	Cache refresh job started.
+
+	Searching: C:\Users .......................................
+	Searching: D:\Users
+	Searching: E: Excluding: E:\$RECYCLE.BIN ...............
+	Folders found: 25718
+	Cache file updated: C:\Users\Schvenn\Documents\Powershell\Modules\Navigation\FolderCache.json
+## Installation
+Simply copy the Navigation Module folder contained in the installation package to your PowerShell Modules path.
+I also recommend adding the following lines into your PowerShell profile, usually called: Microsoft.PowerShell_profile.ps1
+
+	impo Navigation
+
+At the bottom of the profile, after all other entries, you can also add the following line in order to initialize any immediate navigation directories you have saved at the start of every session:
+
+	locations
+## Module Contents
+This package includes the following files:
+
+File:                   Purpose:
+Navigation.psd1         The standard PowerShell module manifest.
+Navigation.psm1         The main module.
+
+Additional files will be populated the first time you use specific features:
+
+File:                   Purpose:
+FolderCache.json.gz     The cache created by the AutoComplete function, used by the Goto function.
+Bookmarks.log           Folder booksmarks you've created for fast navigation.
+Locations.log           The immediate navigation directories you have saved.
+History.log             The recent directories navigated to using Goto, used by Recent(s) function.
+## Configuration
+You can modify the Navigation.psd1 configuration file in any standard text editor.
+
+@{GotoLogPath = "History.log"
+GotoCachePath = "FolderCache.json.gz"
+GotoSearchRoots = @("C:\Users","D:\Users","E:")
+GotoSearchExclusions = @("`$RECYCLE.BIN","RecycleBin")
+GotoCacheMaxAge = 5
+GotoCacheMaxMatches = 10
+RecursionDepth = 6
+GotoCacheSize = 25
+BookmarkFilePath = "Bookmarks.log"
+LocationsPath = "Locations.log"}
+
+Add or change the GotoSearchRoots in order to define what drives and root pathways you'd like the folder cache to contain.
+
+The GotoCacheMaxAge represents the number of days should pass between scheduled cache refreshes. The default is set to 5.
+
+RecursionDepth denotes how many directories deep the functions should search. I wouldn't recommend going higher than 6 and for most people, 4 is likely a better number; striking a balance between performance and completeness.
+
+GotoCacheSize sets the number of directory hops to keep in the history for the Recent(s) function.
+## License
+Copyright © 2025 Craig Plath
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+copies of the Software, and to permit persons to whom the Software is 
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in 
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
+THE SOFTWARE.
+##>
